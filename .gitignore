@@ -22,3 +22,7 @@ erl_crash.dump
 # Ignore package tarball (built via "mix hex.build").
 vcard-*.tar
 
+# Senstive test data
+test/examples/kip.vcf
+
+

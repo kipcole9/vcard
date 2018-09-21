@@ -2,8 +2,8 @@ defmodule VCard.Parser do
   import NimbleParsec
   import VCard.Parser.Grammar
 
-  def parse(vcard) when is_binary(vcard) do
-    vcard
+  def parse(vcard_text) when is_binary(vcard_text) do
+    vcard_text
     |> unfold
     |> vcard
   end
@@ -20,4 +20,7 @@ defmodule VCard.Parser do
 
   defparsec :content,
     content_line()
+
+  defparsec :textt,
+    text()
 end

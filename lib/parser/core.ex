@@ -10,11 +10,7 @@ defmodule VCard.Parser.Core do
       ascii_char([@cr]) |> ascii_char([@lf]),
       ascii_char([@lf])
     ])
-  end
-
-  def newline do
-    ascii_char([@cr])
-    |> ascii_char([@lf])
+    |> label("Expected a newline (either CRLF or LF)")
   end
 
   def colon do
@@ -48,4 +44,40 @@ defmodule VCard.Parser.Core do
   def alphanum_and_dash do
     ascii_string([?a..?z, ?A..?Z, ?0..?9, ?-], min: 1)
   end
+
+  def anycase_string(string) do
+    string
+    |> String.upcase
+    |> String.to_charlist
+    |> Enum.reverse
+    |> char_piper
+    |> reduce({List, :to_string, []})
+  end
+
+  defp char_piper([c]) when c in ?A..?Z do
+    c
+    |> both_cases
+    |> ascii_char
+  end
+
+  defp char_piper([c | rest]) when c in ?A..?Z do
+    rest
+    |> char_piper
+    |> ascii_char(both_cases(c))
+  end
+
+  defp char_piper([c]) do
+    ascii_char([c])
+  end
+
+  defp char_piper([c | rest]) do
+    rest
+    |> char_piper
+    |> ascii_char([c])
+  end
+
+  defp both_cases(c) do
+    [c, c + 32]
+  end
+
 end

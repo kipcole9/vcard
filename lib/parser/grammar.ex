@@ -1,6 +1,9 @@
 defmodule VCard.Parser.Grammar do
   import NimbleParsec
   import VCard.Parser.Core
+  alias VCard.Parser.Utils
+
+  alias VCard.Parser.Property
 
   # vcard-entity = 1*vcard
   #
@@ -12,28 +15,22 @@ defmodule VCard.Parser.Grammar do
   #      ; VERSION MUST come immediately after BEGIN:VCARD.
 
   def begin_line do
-    string("BEGIN:VCARD")
+    anycase_string("begin:vcard")
     |> concat(crlf())
+    |> ignore
+    |> label("Expected 'BEGIN:VCARD' as the first line in the vcard file")
   end
 
-  def version do
-    string("VERSION")
-    |> ignore(colon())
-    |> concat(version_number())
-    |> concat(crlf())
-  end
-
-  def version_number do
-    decimal_digit()
-    |> ascii_string([?.])
-    |> concat(decimal_digit())
-    |> reduce({Enum, :join, []})
-    |> tag(:version)
+  def debug(args, context, _, _, _) do
+    IO.inspect args
+    {args, context}
   end
 
   def end_line do
-    string("END:VCARD")
+    anycase_string("end:vcard")
     |> concat(crlf())
+    |> ignore
+    |> label("Expected 'END:VCARD' as the last line in the vcard file")
   end
 
   #    contentline = [group "."] name *(";" param) ":" value CRLF
@@ -45,29 +42,49 @@ defmodule VCard.Parser.Grammar do
   #      ; procedure described in Section 3.2.
   #
   def content_line do
-    optional(group() |> concat(period()))
+    optional(group() |> ignore(period()))
     |> concat(name())
     |> optional(params())
     |> ignore(colon())
     |> concat(value())
     |> ignore(crlf())
+    |> traverse(:reduce_content_line)
+  end
+
+  def reduce_content_line(_rest, args, context, _line, _offset) do
+    updated_args =
+      args
+      |> Keyword.get(:property)
+      |> Property.reduce(args)
+
+    {[updated_args], context}
   end
 
   def params do
     repeat(ignore(semicolon()) |> concat(param()))
-    |> reduce({Enum, :into, [%{}]})
+    |> reduce(:group_params)
     |> unwrap_and_tag(:params)
   end
+
+  def group_params(list) do
+    list
+    |> Enum.group_by(fn {k, _v} -> k end, fn {_k, v} -> v end)
+    |> Map.new(fn {x, y} ->
+      case List.flatten(y) do
+        [one] -> {x, one}
+        other -> {x, other}
+      end
+    end)
+  end
+
   #    group = 1*(ALPHA / DIGIT / "-")
   def group do
     alphanum_and_dash()
+    |> unwrap_and_tag(:group)
   end
 
   def value do
-    choice([
-      text(),
-      text()
-    ])
+    text()
     |> unwrap_and_tag(:value)
   end
 
@@ -76,8 +93,23 @@ defmodule VCard.Parser.Grammar do
   # TEXT-CHAR = "\\" / "\," / "\n" / WSP / NON-ASCII
   #           / %x21-2B / %x2D-5B / %x5D-7E
   #    ; Backslashes, commas, and newlines must be encoded.
+  @unescaped [0x20, 0x21..0x2b, 0x2d..0x5b, 0x5d..0x7e]
+  @escaped [?\\, 0x0d]
+  @others [160]
+
   def text do
-    ascii_string([?\\, ?,, 0x0d, 0x20, 0x21..0x2b, 0x2d..0x5b, 0x5d..0x7e], min: 1)
+    choice([
+      utf8_char(@others),
+      ascii_char([?\\]) |> ascii_char(@escaped ++ @unescaped),
+      ascii_char(@unescaped),
+    ])
+    |> repeat
+    |> reduce({List, :to_string, []})
+  end
+
+  def debug(rest, context, _line, _offset) do
+    IO.inspect rest
+    {[], context}
   end
 
   #    name  = "SOURCE" / "KIND" / "FN" / "N" / "NICKNAME"
@@ -95,52 +127,52 @@ defmodule VCard.Parser.Grammar do
   def name do
     choice([
       known_name(),
-      experimental(),
-      iana_token(),
+      experimental()
     ])
+    |> reduce({Utils, :downcase, []})
     |> unwrap_and_tag(:property)
   end
 
   def known_name do
     choice([
-      string("SOURCE"),
-      string("KIND"),
-      string("FN"),
-      string("N"),
-      string("NICKNAME"),
-      string("PHOTO"),
-      string("BDAY"),
-      string("ANNIVERSARY"),
-      string("GENDER"),
-      string("ADR"),
-      string("TEL"),
-      string("EMAIL"),
-      string("IMPP"),
-      string("LANG"),
-      string("TZ"),
-      string("GEO"),
-      string("TITLE"),
-      string("ROLE"),
-      string("LOGO"),
-      string("ORG"),
-      string("MEMBER"),
-      string("RELATED"),
-      string("CATEGORIES"),
-      string("NOTE"),
-      string("PRODID"),
-      string("REV"),
-      string("SOUND"),
-      string("UID"),
-      string("CLIENTPIDMAP"),
-      string("URL"),
-      string("KEY"),
-      string("FBURL"),
-      string("CALADRURI"),
-      string("CALURI"),
-      string("XML")
+      anycase_string("version"),
+      anycase_string("source"),
+      anycase_string("kind"),
+      anycase_string("fn"),
+      anycase_string("nickname"),
+      anycase_string("photo"),
+      anycase_string("bday"),
+      anycase_string("anniversary"),
+      anycase_string("gender"),
+      anycase_string("adr"),
+      anycase_string("tel"),
+      anycase_string("email"),
+      anycase_string("impp"),
+      anycase_string("lang"),
+      anycase_string("tz"),
+      anycase_string("geo"),
+      anycase_string("title"),
+      anycase_string("role"),
+      anycase_string("logo"),
+      anycase_string("org"),
+      anycase_string("member"),
+      anycase_string("related"),
+      anycase_string("categories"),
+      anycase_string("note"),
+      anycase_string("prodid"),
+      anycase_string("rev"),
+      anycase_string("sound"),
+      anycase_string("uid"),
+      anycase_string("clientpidmap"),
+      anycase_string("url"),
+      anycase_string("key"),
+      anycase_string("fburl"),
+      anycase_string("caladruri"),
+      anycase_string("caluri"),
+      anycase_string("xml"),
+      anycase_string("n"),
     ])
   end
-
   #
   #    iana-token = 1*(ALPHA / DIGIT / "-")
   #      ; identifier registered with IANA
@@ -176,24 +208,41 @@ defmodule VCard.Parser.Grammar do
     |> ignore(equals())
     |> concat(param_value())
     |> repeat(ignore(comma() |> concat(param_value())))
-    |> reduce({List, :to_tuple, []})
+    |> reduce(:reduce_param)
+  end
+
+  def reduce_param([key, value]) do
+    {String.downcase(key), value}
   end
 
   def quoted_string do
     ignore(ascii_char([?"]))
     |> concat(qsafe_string())
+    |> ignore(ascii_char([?"]))
   end
 
   #    SAFE-CHAR = WSP / "!" / %x23-39 / %x3C-7E / NON-ASCII
   #      ; Any character except CTLs, DQUOTE, ";", ":"
+  #      ; ALSO ALLOW &NBSP 0xa0 since Apple Contacts generates it
   def safe_string do
-    ascii_string([0x20, 0x09, ?!, 0x23..0x39, 0x3c..0x7e], min: 1)
+    choice([
+      non_ascii(),
+      utf8_char([160]),
+      ascii_char([0x20, 0x09, ?!, 0x23..0x39, 0x3c..0x7e])
+    ])
+    |> times(min: 1)
+    |> reduce({List, :to_string, []})
   end
 
   #    QSAFE-CHAR = WSP / "!" / %x23-7E / NON-ASCII
   #      ; Any character except CTLs, DQUOTE
   def qsafe_string do
-    ascii_string([0x20, 0x09, ?!, 0x23..0x7e], min: 1)
+    choice([
+      non_ascii(),
+      ascii_char([0x20, 0x09, ?!, 0x23..0x7e])
+    ])
+    |> times(min: 1)
+    |> reduce({List, :to_string, []})
   end
 
   #    NON-ASCII = UTF8-2 / UTF8-3 / UTF8-4
@@ -209,21 +258,26 @@ defmodule VCard.Parser.Grammar do
 
   def convert_utf8(args) do
     args
-    |> IO.inspect
     |> Enum.map(fn x -> {y, ""} = Integer.parse(x, 16); y end)
-    |> IO.inspect
     |> List.to_string
   end
 
   #    param-value = *SAFE-CHAR / DQUOTE *QSAFE-CHAR DQUOTE
   def param_value do
     choice([
+      quoted_string(),
       non_ascii(),
       safe_string(),
-      quoted_string()
     ])
     |> repeat
-    |> reduce({Enum, :join, []})
+    |> reduce(:split_at_commas)
+  end
+
+  @splitter Regex.compile!("(?<!\\\\)[,]")
+  def split_at_commas(list) do
+    list
+    |> Enum.join
+    |> String.split(@splitter)
   end
 
 end

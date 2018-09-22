@@ -69,7 +69,7 @@ defmodule VCard.Parser.Params do
   end
 
   def any do
-    experimental_param()
+    x_name()
   end
 
   #    param-value = *SAFE-CHAR / DQUOTE *QSAFE-CHAR DQUOTE

@@ -138,20 +138,12 @@ defmodule VCard.Parser.Core do
   #      ; Names that begin with "x-" or "X-" are
   #      ; reserved for experimental use, not intended for released
   #      ; products, or for use in bilateral agreements.
-  def experimental_property do
+  def x_name do
     ascii_string([?x, ?X], min: 1)
     |> ascii_string([?-], min: 1)
     |> concat(alphanum_and_dash())
     |> reduce({Enum, :join, []})
-    |> label("an experimental property")
-  end
-
-  def experimental_param do
-    ascii_string([?x, ?X], min: 1)
-    |> ascii_string([?-], min: 1)
-    |> concat(alphanum_and_dash())
-    |> reduce({Enum, :join, []})
-    |> label("an experimental param")
+    |> label("an x- prefixed token")
   end
 
   def text_list do
@@ -164,16 +156,16 @@ defmodule VCard.Parser.Core do
   # TEXT-CHAR = "\\" / "\," / "\n" / WSP / NON-ASCII
   #           / %x21-2B / %x2D-5B / %x5D-7E
   #    ; Backslashes, commas, and newlines must be encoded.
-  @unescaped [0x20, 0x21..0x2b, 0x2d..0x5b, 0x5d..0x7e]
-  @escaped [?\\, 0x0d]
+  @unescaped_char [0x20, 0x09, 0x21..0x2b, 0x2d..0x5b, 0x5d..0x7e]
+  @escaped_char [?\\, ?,, 0x0d]
   @others [160]
 
   def text do
     choice([
       non_ascii(),
       utf8_char(@others),
-      ascii_char([?\\]) |> ascii_char(@escaped ++ @unescaped),
-      ascii_char(@unescaped),
+      ascii_char([?\\]) |> ascii_char(@escaped_char ++ @unescaped_char),
+      ascii_char(@unescaped_char),
     ])
     |> repeat
     |> reduce({List, :to_string, []})
@@ -199,6 +191,12 @@ defmodule VCard.Parser.Core do
   def list_component do
     component()
     |> repeat(ignore(semicolon()) |> concat(component()))
+  end
+
+  def version_as_float(args) do
+    args
+    |> Enum.join
+    |> String.to_float
   end
 
 end

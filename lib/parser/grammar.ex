@@ -60,7 +60,7 @@ defmodule VCard.Parser.Grammar do
   def property do
     choice([
       known_property(),
-      experimental_property()
+      x_property()
     ])
     |> label("a vcard property name")
     |> reduce(:tag_property)
@@ -73,7 +73,7 @@ defmodule VCard.Parser.Grammar do
   def known_property do
     choice([
       anycase_string("source")        |> concat(source()),
-      anycase_string("kind"),
+      anycase_string("kind")          |> concat(kind()),
       anycase_string("fn")            |> concat(fn_()),
       anycase_string("nickname")      |> concat(nickname()),
       anycase_string("photo"),
@@ -95,7 +95,7 @@ defmodule VCard.Parser.Grammar do
       anycase_string("related"),
       anycase_string("categories"),
       anycase_string("note"),
-      anycase_string("prodid"),
+      anycase_string("prodid")        |> concat(prodid()),
       anycase_string("rev"),
       anycase_string("sound"),
       anycase_string("uid")           |> concat(uid()),

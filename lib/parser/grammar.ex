@@ -76,7 +76,7 @@ defmodule VCard.Parser.Grammar do
       anycase_string("kind")          |> concat(kind()),
       anycase_string("fn")            |> concat(fn_()),
       anycase_string("nickname")      |> concat(nickname()),
-      anycase_string("photo"),
+      anycase_string("photo")         |> concat(photo()),
       anycase_string("bday"),
       anycase_string("anniversary"),
       anycase_string("gender"),
@@ -105,7 +105,7 @@ defmodule VCard.Parser.Grammar do
       anycase_string("fburl"),
       anycase_string("caladruri"),
       anycase_string("caluri"),
-      anycase_string("xml"),
+      anycase_string("xml")           |> concat(xml()),
       anycase_string("n")             |> concat(n()),
     ])
   end

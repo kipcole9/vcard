@@ -173,6 +173,44 @@ defmodule VCard.Parser.Property do
      ]) |> unwrap_and_tag(:value))
   end
 
+  # 6.1.5.  XML
+  #
+  #    Purpose:  To include extended XML-encoded vCard data in a plain
+  #       vCard.
+  #
+  #    Value type:  A single text value.
+  #
+  #    Cardinality:  *
+  #
+  #    Special notes:  The content of this property is a single XML 1.0
+  #       [W3C.REC-xml-20081126] element whose namespace MUST be explicitly
+  #       specified using the xmlns attribute and MUST NOT be the vCard 4
+  #       namespace ("urn:ietf:params:xml:ns:vcard-4.0").  (This implies
+  #       that it cannot duplicate a standard vCard property.)  The element
+  #       is to be interpreted as if it was contained in a <vcard> element,
+  #       as defined in [RFC6351].
+  #
+  #       The fragment is subject to normal line folding and escaping, i.e.,
+  #       replace all backslashes with "\\", then replace all newlines with
+  #       "\n", then fold long lines.
+  #
+  #       Support for this property is OPTIONAL, but implementations of this
+  #       specification MUST preserve instances of this property when
+  #       propagating vCards.
+  #
+  #       See [RFC6351] for more information on the intended use of this
+  #       property.
+  #
+  #    ABNF:
+  #
+  #      XML-param = "VALUE=text" / altid-param
+  #      XML-value = text
+  def xml do
+    optional(params([:value, :altid]))
+    |> ignore(colon())
+    |> concat(text() |> unwrap_and_tag(:value))
+  end
+
   # 6.2.1.  FN
   #
   #    Purpose:  To specify the formatted text corresponding to the name of
@@ -271,6 +309,36 @@ defmodule VCard.Parser.Property do
   #              NICKNAME;TYPE=work:Boss
   def nickname do
     optional(params([:value, :type, :language, :altid, :pid, :pref, :any]))
+    |> ignore(colon())
+    |> concat(text_list() |> tag(:value))
+  end
+
+
+  # 6.2.4.  PHOTO
+  #
+  #    Purpose:  To specify an image or photograph information that
+  #       annotates some aspect of the object the vCard represents.
+  #
+  #    Value type:  A single URI.
+  #
+  #    Cardinality:  *
+  #
+  #    ABNF:
+  #
+  #      PHOTO-param = "VALUE=uri" / altid-param / type-param
+  #                  / mediatype-param / pref-param / pid-param / any-param
+  #      PHOTO-value = URI
+  #
+  #    Examples:
+  #
+  #        PHOTO:http://www.example.com/pub/photos/jqpublic.gif
+  #
+  #        PHOTO:data:image/jpeg;base64,MIICajCCAdOgAwIBAgICBEUwDQYJKoZIhv
+  #         AQEEBQAwdzELMAkGA1UEBhMCVVMxLDAqBgNVBAoTI05ldHNjYXBlIENvbW11bm
+  #         ljYXRpb25zIENvcnBvcmF0aW9uMRwwGgYDVQQLExNJbmZvcm1hdGlvbiBTeXN0
+  #         <...remainder of base64-encoded data...>
+  def photo do
+    optional(params([:value, :type, :altid, :pid, :pref, :mediatype, :any]))
     |> ignore(colon())
     |> concat(text_list() |> tag(:value))
   end

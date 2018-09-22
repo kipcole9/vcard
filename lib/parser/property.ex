@@ -140,7 +140,7 @@ defmodule VCard.Parser.Property do
   #      KIND-value = "individual" / "group" / "org" / "location"
   #                 / iana-token / x-name
   #
-  #    Example:
+  #    Examplee:
   #
   #       This represents someone named Jane Doe working in the marketing
   #       department of the North American division of ABC Inc.

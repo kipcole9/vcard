@@ -199,4 +199,70 @@ defmodule VCard.Parser.Core do
     |> String.to_float
   end
 
+  #      year   = 4DIGIT  ; 0000-9999
+  #      month  = 2DIGIT  ; 01-12
+  #      day    = 2DIGIT  ; 01-28/29/30/31 depending on month and leap year
+  #      hour   = 2DIGIT  ; 00-23
+  #      minute = 2DIGIT  ; 00-59
+  #      second = 2DIGIT  ; 00-58/59/60 depending on leap second
+  #      zone   = utc-designator / utc-offset
+  #      utc-designator = %x5A  ; uppercase "Z"
+  #
+  #      date          = year    [month  day]
+  #                    / year "-" month
+  #                    / "--"     month [day]
+  #                    / "--"      "-"   day
+  #      date-noreduc  = year     month  day
+  #                    / "--"     month  day
+  #                    / "--"      "-"   day
+  #      date-complete = year     month  day
+  #
+  #      time          = hour [minute [second]] [zone]
+  #                    /  "-"  minute [second]  [zone]
+  #                    /  "-"   "-"    second   [zone]
+  #      time-notrunc  = hour [minute [second]] [zone]
+  #      time-complete = hour  minute  second   [zone]
+  #      time-designator = %x54  ; uppercase "T"
+  #      date-time = date-noreduc  time-designator time-notrunc
+  #      timestamp = date-complete time-designator time-complete
+  #
+  #      date-and-or-time = date-time / date / time-designator time
+  #
+  #      utc-offset = sign hour [minute]
+  def year do
+    integer(4) |> tag(:year)
+  end
+
+  def month do
+    integer(2) |> tag(:month)
+  end
+
+  def day do
+    integer(2) |> tag(:day)
+  end
+
+  def hour do
+    integer(2) |> tag(:hour)
+  end
+
+  def minute do
+    integer(2) |> tag(:minute)
+  end
+
+  def second do
+    integer(2) |> tag(:second)
+  end
+
+  # def zone do
+  #   choice([utc_designator(), utc_offset()])
+  # end
+
+  def date do
+    choice([
+      year() |> optional(month() |> concat(day())),
+      year() |> ignore(ascii_char(?-)) |> concat(month()),
+      string("--") |> concat(month()) |> optional(day()),
+      string("--") |> ignore(ascii_char(?-)) |> concat(day())
+    ])
+  end
 end

@@ -68,6 +68,10 @@ defmodule VCard.Parser.Params do
     anycase_string("sort_as")
   end
 
+  def calscale do
+    anycase_string("calscale")
+  end
+
   def any do
     x_name()
   end

@@ -230,27 +230,38 @@ defmodule VCard.Parser.Core do
   #
   #      utc-offset = sign hour [minute]
   def year do
-    integer(4) |> tag(:year)
+    integer(4) |> unwrap_and_tag(:year)
   end
 
   def month do
-    integer(2) |> tag(:month)
+    integer(2) |> unwrap_and_tag(:month)
   end
 
   def day do
-    integer(2) |> tag(:day)
+    integer(2) |> unwrap_and_tag(:day)
   end
 
   def hour do
-    integer(2) |> tag(:hour)
+    integer(2) |> unwrap_and_tag(:hour)
   end
 
   def minute do
-    integer(2) |> tag(:minute)
+    integer(2) |> unwrap_and_tag(:minute)
   end
 
   def second do
-    integer(2) |> tag(:second)
+    integer(2) |> unwrap_and_tag(:second)
+  end
+
+  def utc_designator do
+    ascii_char([?Z])
+  end
+
+  def utc_offset do
+    ascii_char([?+, ?-])
+    |> hour()
+    |> minute()
+    |> tag(:offset)
   end
 
   # def zone do
@@ -260,9 +271,9 @@ defmodule VCard.Parser.Core do
   def date do
     choice([
       year() |> optional(month() |> concat(day())),
-      year() |> ignore(ascii_char(?-)) |> concat(month()),
-      string("--") |> concat(month()) |> optional(day()),
-      string("--") |> ignore(ascii_char(?-)) |> concat(day())
+      year() |> ignore(ascii_char([?-])) |> concat(month()),
+      ignore(string("--")) |> concat(month()) |> optional(day()),
+      ignore(string("--")) |> ignore(ascii_char([?-])) |> concat(day())
     ])
   end
 end

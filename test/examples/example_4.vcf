@@ -3,6 +3,7 @@ VERSION:3.0
 PRODID:-//Apple Inc.//Mac OS X 10.13.6//EN
 N:Person;Test;Middle;Prefix;Suffix\, Phd.
 FN:Prefix Test Middle Person Suffix\, Phd.
+BDAY:--0102
 X-PHONETIC-FIRST-NAME:Phonetic
 X-PHONETIC-LAST-NAME:Last
 UID:100d8a79-a614-4a65-959f-80a014779d41

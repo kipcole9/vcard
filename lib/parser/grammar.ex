@@ -60,7 +60,7 @@ defmodule VCard.Parser.Grammar do
   def property do
     choice([
       known_property(),
-      x_name()
+      x_property()
     ])
     |> label("a vcard property name")
     |> reduce(:tag_property)

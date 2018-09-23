@@ -313,6 +313,35 @@ defmodule VCard.Parser.Property do
     |> concat(text_list() |> tag(:value))
   end
 
+  # 6.2.4.  PHOTO
+  #
+  #    Purpose:  To specify an image or photograph information that
+  #       annotates some aspect of the object the vCard represents.
+  #
+  #    Value type:  A single URI.
+  #
+  #    Cardinality:  *
+  #
+  #    ABNF:
+  #
+  #      PHOTO-param = "VALUE=uri" / altid-param / type-param
+  #                  / mediatype-param / pref-param / pid-param / any-param
+  #      PHOTO-value = URI
+  #
+  #    Examples:
+  #
+  #        PHOTO:http://www.example.com/pub/photos/jqpublic.gif
+  #
+  #        PHOTO:data:image/jpeg;base64,MIICajCCAdOgAwIBAgICBEUwDQYJKoZIhv
+  #         AQEEBQAwdzELMAkGA1UEBhMCVVMxLDAqBgNVBAoTI05ldHNjYXBlIENvbW11bm
+  #         ljYXRpb25zIENvcnBvcmF0aW9uMRwwGgYDVQQLExNJbmZvcm1hdGlvbiBTeXN0
+  #         <...remainder of base64-encoded data...>
+  def photo do
+    optional(params([:value, :type, :altid, :pid, :pref, :mediatype, :any]))
+    |> ignore(colon())
+    |> concat(text_list() |> tag(:value))
+  end
+
   # 6.2.5.  BDAY
   #
   #    Purpose:  To specify the birth date of the object the vCard
@@ -461,6 +490,34 @@ defmodule VCard.Parser.Property do
     |> concat(text() |> unwrap_and_tag(:value))
   end
 
+  # 6.7.3.  PRODID
+  #
+  #    Purpose:  To specify the identifier for the product that created the
+  #       vCard object.
+  #
+  #    Type value:  A single text value.
+  #
+  #    Cardinality:  *1
+  #
+  #    Special notes:  Implementations SHOULD use a method such as that
+  #       specified for Formal Public Identifiers in [ISO9070] or for
+  #       Universal Resource Names in [RFC3406] to ensure that the text
+  #       value is unique.
+  #
+  #    ABNF:
+  #
+  #      PRODID-param = "VALUE=text" / any-param
+  #      PRODID-value = text
+  #
+  #    Example:
+  #
+  #            PRODID:-//ONLINE DIRECTORY//NONSGML Version 1//EN
+  def prodid do
+    optional(params([:value, :any]))
+    |> ignore(colon())
+    |> concat(text() |> unwrap_and_tag(:value))
+  end
+
   # 6.7.6.  UID
   #
   #    Purpose:  To specify a value that represents a globally unique
@@ -584,4 +641,13 @@ defmodule VCard.Parser.Property do
     |> label("a version number")
   end
 
+  def x_property do
+    ascii_string([?x, ?X], min: 1)
+    |> ascii_string([?-], min: 1)
+    |> concat(alphanum_and_dash())
+    |> reduce({Enum, :join, []})
+    |> ignore(colon())
+    |> concat(text() |> unwrap_and_tag(:value))
+    |> label("an x- prefix property")
+  end
 end

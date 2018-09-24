@@ -1,3 +1,4 @@
 %{
+  "nimble_csv": {:hex, :nimble_csv, "0.4.0", "e2a21d93071cb3b3278411b5b49fe6b55a0e4b3e90485d1187e0c9c75c74f977", [:mix], [], "hexpm"},
   "nimble_parsec": {:hex, :nimble_parsec, "0.4.0", "ee261bb53214943679422be70f1658fff573c5d0b0a1ecd0f18738944f818efe", [:mix], [], "hexpm"},
 }

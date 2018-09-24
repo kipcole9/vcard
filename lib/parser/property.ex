@@ -140,7 +140,7 @@ defmodule VCard.Parser.Property do
   #      KIND-value = "individual" / "group" / "org" / "location"
   #                 / iana-token / x-name
   #
-  #    Examplee:
+  #    Example:
   #
   #       This represents someone named Jane Doe working in the marketing
   #       department of the North American division of ABC Inc.
@@ -170,7 +170,7 @@ defmodule VCard.Parser.Property do
         anycase_string("org"),
         anycase_string("location"),
         x_name()
-     ]) |> unwrap_and_tag(:value))
+     ]) |> unwrap_and_tag(:value) |> label("a individual, group, org, location or an x- name"))
   end
 
   # 6.1.5.  XML
@@ -377,6 +377,175 @@ defmodule VCard.Parser.Property do
     |> concat(date() |> tag(:value))
   end
 
+  # 6.2.6.  ANNIVERSARY
+  #
+  #    Purpose:  The date of marriage, or equivalent, of the object the
+  #       vCard represents.
+  #
+  #    Value type:  The default is a single date-and-or-time value.  It can
+  #       also be reset to a single text value.
+  #
+  #    Cardinality:  *1
+  #
+  #    ABNF:
+  #
+  #      ANNIVERSARY-param = "VALUE=" ("date-and-or-time" / "text")
+  #      ANNIVERSARY-value = date-and-or-time / text
+  #        ; Value and parameter MUST match.
+  #
+  #      ANNIVERSARY-param =/ altid-param / calscale-param / any-param
+  #        ; calscale-param can only be present when ANNIVERSARY-value is
+  #        ; date-and-or-time and actually contains a date or date-time.
+  #
+  #    Examples:
+  #
+  #              ANNIVERSARY:19960415
+  def anniversary do
+    optional(params([:value, :altid, :calscale, :any]))
+    |> ignore(colon())
+    |> concat(date_and_or_time() |> tag(:value))
+  end
+
+  # 6.2.7.  GENDER
+  #
+  #    Purpose:  To specify the components of the sex and gender identity of
+  #       the object the vCard represents.
+  #
+  #    Value type:  A single structured value with two components.  Each
+  #       component has a single text value.
+  #
+  #    Cardinality:  *1
+  #
+  #    Special notes:  The components correspond, in sequence, to the sex
+  #       (biological), and gender identity.  Each component is optional.
+  #
+  #       Sex component:  A single letter.  M stands for "male", F stands
+  #          for "female", O stands for "other", N stands for "none or not
+  #          applicable", U stands for "unknown".
+  #
+  #       Gender identity component:  Free-form text.
+  #
+  #    ABNF:
+  #
+  #                    GENDER-param = "VALUE=text" / any-param
+  #                    GENDER-value = sex [";" text]
+  #
+  #                    sex = "" / "M" / "F" / "O" / "N" / "U"
+  #
+  #    Examples:
+  #
+  #      GENDER:M
+  #      GENDER:F
+  #      GENDER:M;Fellow
+  #      GENDER:F;grrrl
+  #      GENDER:O;intersex
+  #      GENDER:;it's complicated
+  def gender do
+    optional(params([:value, :any]))
+    |> ignore(colon())
+    |> concat(sex()
+    |> concat(gender_identity())
+    |> tag(:value))
+  end
+
+  def sex do
+    choice([
+      anycase_string("m"),
+      anycase_string("f"),
+      anycase_string("o"),
+      anycase_string("n"),
+      anycase_string("u"),
+      lookahead(:default_nil)
+    ])
+  end
+
+  def gender_identity do
+    choice([
+      ignore(semicolon()) |> concat(text()),
+      lookahead(:default_nil)
+    ])
+  end
+
+  # 6.3.1.  ADR
+  #
+  #    Purpose:  To specify the components of the delivery address for the
+  #       vCard object.
+  #
+  #    Value type:  A single structured text value, separated by the
+  #       SEMICOLON character (U+003B).
+  #
+  #    Cardinality:  *
+  #
+  #    Special notes:  The structured type value consists of a sequence of
+  #       address components.  The component values MUST be specified in
+  #       their corresponding position.  The structured type value
+  #       corresponds, in sequence, to
+  #          the post office box;
+  #          the extended address (e.g., apartment or suite number);
+  #          the street address;
+  #          the locality (e.g., city);
+  #          the region (e.g., state or province);
+  #          the postal code;
+  #          the country name (full name in the language specified in
+  #          Section 5.1).
+  #
+  #       When a component value is missing, the associated component
+  #       separator MUST still be specified.
+  #
+  #       Experience with vCard 3 has shown that the first two components
+  #       (post office box and extended address) are plagued with many
+  #       interoperability issues.  To ensure maximal interoperability,
+  #       their values SHOULD be empty.
+  #
+  #       The text components are separated by the SEMICOLON character
+  #       (U+003B).  Where it makes semantic sense, individual text
+  #       components can include multiple text values (e.g., a "street"
+  #       component with multiple lines) separated by the COMMA character
+  #       (U+002C).
+  #
+  #       The property can include the "PREF" parameter to indicate the
+  #       preferred delivery address when more than one address is
+  #       specified.
+  #
+  #       The GEO and TZ parameters MAY be used with this property.
+  #
+  #       The property can also include a "LABEL" parameter to present a
+  #       delivery address label for the address.  Its value is a plain-text
+  #       string representing the formatted address.  Newlines are encoded
+  #       as \n, as they are for property values.
+  #
+  #    ABNF:
+  #
+  #      label-param = "LABEL=" param-value
+  #
+  #      ADR-param = "VALUE=text" / label-param / language-param
+  #                / geo-parameter / tz-parameter / altid-param / pid-param
+  #                / pref-param / type-param / any-param
+  #
+  #      ADR-value = ADR-component-pobox ";" ADR-component-ext ";"
+  #                  ADR-component-street ";" ADR-component-locality ";"
+  #                  ADR-component-region ";" ADR-component-code ";"
+  #                  ADR-component-country
+  #      ADR-component-pobox    = list-component
+  #      ADR-component-ext      = list-component
+  #      ADR-component-street   = list-component
+  #      ADR-component-locality = list-component
+  #      ADR-component-region   = list-component
+  #      ADR-component-code     = list-component
+  #      ADR-component-country  = list-component
+  #
+  #    Example: In this example, the post office box and the extended
+  #    address are absent.
+  #
+  #      ADR;GEO="geo:12.3457,78.910";LABEL="Mr. John Q. Public, Esq.\n
+  #       Mail Drop: TNE QB\n123 Main Street\nAny Town, CA  91921-1234\n
+  #       U.S.A.":;;123 Main Street;Any Town;CA;91921-1234;U.S.A.
+  def adr do
+    optional(params([:value, :label, :language, :geo, :tz, :altid, :pid, :pref, :type, :any]))
+    |> ignore(colon())
+    |> concat(list_component() |> tag(:value))
+  end
+
   # 6.4.1.  TEL
   #
   #    Purpose:  To specify the telephone number for telephony communication
@@ -488,6 +657,393 @@ defmodule VCard.Parser.Property do
     optional(params([:value, :type, :altid, :pid, :pref, :any]))
     |> ignore(colon())
     |> concat(text() |> unwrap_and_tag(:value))
+  end
+
+  # 6.4.3.  IMPP
+  #
+  #    Purpose:  To specify the URI for instant messaging and presence
+  #       protocol communications with the object the vCard represents.
+  #
+  #    Value type:  A single URI.
+  #
+  #    Cardinality:  *
+  #
+  #    Special notes:  The property may include the "PREF" parameter to
+  #       indicate that this is a preferred address and has the same
+  #       semantics as the "PREF" parameter in a TEL property.
+  #
+  #
+  #
+  # Perreault                    Standards Track                   [Page 36]
+  #
+  # RFC 6350                          vCard                      August 2011
+  #
+  #
+  #       If this property's value is a URI that can be used for voice
+  #       and/or video, the TEL property (Section 6.4.1) SHOULD be used in
+  #       addition to this property.
+  #
+  #       This property is adapted from [RFC4770], which is made obsolete by
+  #       this document.
+  #
+  #    ABNF:
+  #
+  #      IMPP-param = "VALUE=uri" / pid-param / pref-param / type-param
+  #                 / mediatype-param / altid-param / any-param
+  #      IMPP-value = URI
+  #
+  #    Example:
+  #
+  #        IMPP;PREF=1:xmpp:alice@example.com
+  #
+  def impp do
+    optional(params([:value, :type, :mediatype, :altid, :pid, :pref, :any]))
+    |> ignore(colon())
+    |> concat(text() |> unwrap_and_tag(:value))
+  end
+
+  # 6.4.4.  LANG
+  #
+  #    Purpose:  To specify the language(s) that may be used for contacting
+  #       the entity associated with the vCard.
+  #
+  #    Value type:  A single language-tag value.
+  #
+  #    Cardinality:  *
+  #
+  #    ABNF:
+  #
+  #      LANG-param = "VALUE=language-tag" / pid-param / pref-param
+  #                 / altid-param / type-param / any-param
+  #      LANG-value = Language-Tag
+  #
+  #    Example:
+  #
+  #        LANG;TYPE=work;PREF=1:en
+  #        LANG;TYPE=work;PREF=2:fr
+  #        LANG;TYPE=home:fr
+  def lang do
+    optional(params([:value, :type, :altid, :pid, :pref, :any]))
+    |> ignore(colon())
+    |> concat(text() |> unwrap_and_tag(:value))
+  end
+
+  # 6.5.1.  TZ
+  #
+  #    Purpose:  To specify information related to the time zone of the
+  #       object the vCard represents.
+  #
+  #    Value type:  The default is a single text value.  It can also be
+  #       reset to a single URI or utc-offset value.
+  #
+  #    Cardinality:  *
+  #
+  #    Special notes:  It is expected that names from the public-domain
+  #       Olson database [TZ-DB] will be used, but this is not a
+  #       restriction.  See also [IANA-TZ].
+  #
+  #       Efforts are currently being directed at creating a standard URI
+  #       scheme for expressing time zone information.  Usage of such a
+  #       scheme would ensure a high level of interoperability between
+  #       implementations that support it.
+  #
+  #       Note that utc-offset values SHOULD NOT be used because the UTC
+  #       offset varies with time -- not just because of the usual daylight
+  #       saving time shifts that occur in may regions, but often entire
+  #       regions will "re-base" their overall offset.  The actual offset
+  #       may be +/- 1 hour (or perhaps a little more) than the one given.
+  #
+  #    ABNF:
+  #
+  #      TZ-param = "VALUE=" ("text" / "uri" / "utc-offset")
+  #      TZ-value = text / URI / utc-offset
+  #        ; Value and parameter MUST match.
+  #
+  #      TZ-param =/ altid-param / pid-param / pref-param / type-param
+  #                / mediatype-param / any-param
+  #
+  #    Examples:
+  #
+  #      TZ:Raleigh/North America
+  #
+  #      TZ;VALUE=utc-offset:-0500
+  #        ; Note: utc-offset format is NOT RECOMMENDED.
+  def tz do
+    optional(params([:value, :type, :mediatype, :altid, :pid, :pref, :any]))
+    |> ignore(colon())
+    |> concat(choice([
+        utc_offset(),
+        text()
+       ]) |> unwrap_and_tag(:value)
+    )
+  end
+
+  # 6.5.2.  GEO
+  #
+  #    Purpose:  To specify information related to the global positioning of
+  #       the object the vCard represents.
+  #
+  #    Value type:  A single URI.
+  #
+  #    Cardinality:  *
+  #
+  #    Special notes:  The "geo" URI scheme [RFC5870] is particularly well
+  #       suited for this property, but other schemes MAY be used.
+  #
+  #    ABNF:
+  #
+  #      GEO-param = "VALUE=uri" / pid-param / pref-param / type-param
+  #                / mediatype-param / altid-param / any-param
+  #      GEO-value = URI
+  #
+  #    Example:
+  #
+  #            GEO:geo:37.386013,-122.082932
+  def geo do
+    optional(params([:value, :type, :mediatype, :altid, :pid, :pref, :any]))
+    |> ignore(colon())
+    |> concat(uri()
+    |> unwrap_and_tag(:value))
+  end
+
+  # 6.6.1.  TITLE
+  #
+  #    Purpose:  To specify the position or job of the object the vCard
+  #       represents.
+  #
+  #    Value type:  A single text value.
+  #
+  #    Cardinality:  *
+  #
+  #    Special notes:  This property is based on the X.520 Title attribute
+  #       [CCITT.X520.1988].
+  #
+  #    ABNF:
+  #
+  #      TITLE-param = "VALUE=text" / language-param / pid-param
+  #                  / pref-param / altid-param / type-param / any-param
+  #      TITLE-value = text
+  #
+  #    Example:
+  #
+  #            TITLE:Research Scientist
+  def title do
+    optional(params([:value, :type, :language, :altid, :pid, :pref, :any]))
+    |> ignore(colon())
+    |> concat(text()
+    |> unwrap_and_tag(:value))
+  end
+
+  # 6.6.2.  ROLE
+  #
+  #    Purpose:  To specify the function or part played in a particular
+  #       situation by the object the vCard represents.
+  #
+  #    Value type:  A single text value.
+  #
+  #    Cardinality:  *
+  #
+  #    Special notes:  This property is based on the X.520 Business Category
+  #       explanatory attribute [CCITT.X520.1988].  This property is
+  #       included as an organizational type to avoid confusion with the
+  #       semantics of the TITLE property and incorrect usage of that
+  #       property when the semantics of this property is intended.
+  #
+  #    ABNF:
+  #
+  #      ROLE-param = "VALUE=text" / language-param / pid-param / pref-param
+  #                 / type-param / altid-param / any-param
+  #      ROLE-value = text
+  #
+  #    Example:
+  #
+  #            ROLE:Project Leader
+  def role do
+    optional(params([:value, :type, :language, :altid, :pid, :pref, :any]))
+    |> ignore(colon())
+    |> concat(text()
+    |> unwrap_and_tag(:value))
+  end
+
+  # 6.6.3.  LOGO
+  #
+  #    Purpose:  To specify a graphic image of a logo associated with the
+  #       object the vCard represents.
+  #
+  #    Value type:  A single URI.
+  #
+  #    Cardinality:  *
+  #
+  #    ABNF:
+  #
+  #      LOGO-param = "VALUE=uri" / language-param / pid-param / pref-param
+  #                 / type-param / mediatype-param / altid-param / any-param
+  #      LOGO-value = URI
+  #
+  #    Examples:
+  #
+  #      LOGO:http://www.example.com/pub/logos/abccorp.jpg
+  #
+  #      LOGO:data:image/jpeg;base64,MIICajCCAdOgAwIBAgICBEUwDQYJKoZIhvc
+  #       AQEEBQAwdzELMAkGA1UEBhMCVVMxLDAqBgNVBAoTI05ldHNjYXBlIENvbW11bm
+  #       ljYXRpb25zIENvcnBvcmF0aW9uMRwwGgYDVQQLExNJbmZvcm1hdGlvbiBTeXN0
+  #       <...the remainder of base64-encoded data...>
+  def logo do
+    optional(params([:value, :type, :mediatype, :altid, :pid, :pref, :any]))
+    |> ignore(colon())
+    |> concat(uri()
+    |> unwrap_and_tag(:value))
+  end
+
+  # 6.6.4.  ORG
+  #
+  #    Purpose:  To specify the organizational name and units associated
+  #       with the vCard.
+  #
+  #    Value type:  A single structured text value consisting of components
+  #       separated by the SEMICOLON character (U+003B).
+  #
+  #    Cardinality:  *
+  #
+  #    Special notes:  The property is based on the X.520 Organization Name
+  #       and Organization Unit attributes [CCITT.X520.1988].  The property
+  #       value is a structured type consisting of the organization name,
+  #       followed by zero or more levels of organizational unit names.
+  #
+  #       The SORT-AS parameter MAY be applied to this property.
+  #
+  #    ABNF:
+  #
+  #      ORG-param = "VALUE=text" / sort-as-param / language-param
+  #                / pid-param / pref-param / altid-param / type-param
+  #                / any-param
+  #      ORG-value = component *(";" component)
+  #
+  #    Example: A property value consisting of an organizational name,
+  #    organizational unit #1 name, and organizational unit #2 name.
+  #
+  #            ORG:ABC\, Inc.;North American Division;Marketing
+  def org do
+    optional(params([:value, :type, :sort_as, :language, :altid, :pid, :pref, :any]))
+    |> ignore(colon())
+    |> concat(component()
+    |> repeat(ignore(semicolon()) |> concat(component()))
+    |> tag(:value))
+  end
+
+  # 6.6.5.  MEMBER
+  #
+  #    Purpose:  To include a member in the group this vCard represents.
+  #
+  #    Value type:  A single URI.  It MAY refer to something other than a
+  #       vCard object.  For example, an email distribution list could
+  #       employ the "mailto" URI scheme [RFC6068] for efficiency.
+  #
+  #    Cardinality:  *
+  #
+  #    Special notes:  This property MUST NOT be present unless the value of
+  #       the KIND property is "group".
+  #
+  #    ABNF:
+  #
+  #      MEMBER-param = "VALUE=uri" / pid-param / pref-param / altid-param
+  #                   / mediatype-param / any-param
+  #      MEMBER-value = URI
+  #
+  #    Examples:
+  #
+  #      BEGIN:VCARD
+  #      VERSION:4.0
+  #      KIND:group
+  #      FN:The Doe family
+  #      MEMBER:urn:uuid:03a0e51f-d1aa-4385-8a53-e29025acd8af
+  #      MEMBER:urn:uuid:b8767877-b4a1-4c70-9acc-505d3819e519
+  #      END:VCARD
+  #      BEGIN:VCARD
+  #      VERSION:4.0
+  #      FN:John Doe
+  #      UID:urn:uuid:03a0e51f-d1aa-4385-8a53-e29025acd8af
+  #      END:VCARD
+  #      BEGIN:VCARD
+  #      VERSION:4.0
+  #      FN:Jane Doe
+  #      UID:urn:uuid:b8767877-b4a1-4c70-9acc-505d3819e519
+  #      END:VCARD
+  #
+  #      BEGIN:VCARD
+  #      VERSION:4.0
+  #      KIND:group
+  #      FN:Funky distribution list
+  #      MEMBER:mailto:subscriber1@example.com
+  #      MEMBER:xmpp:subscriber2@example.com
+  #      MEMBER:sip:subscriber3@example.com
+  #      MEMBER:tel:+1-418-555-5555
+  #      END:VCARD
+  def member do
+    optional(params([:value, :type, :mediatype, :altid, :pid, :pref, :any]))
+    |> ignore(colon())
+    |> concat(uri()
+    |> unwrap_and_tag(:value))
+  end
+
+  # 6.6.6.  RELATED
+  #
+  #    Purpose:  To specify a relationship between another entity and the
+  #       entity represented by this vCard.
+  #
+  #    Value type:  A single URI.  It can also be reset to a single text
+  #       value.  The text value can be used to specify textual information.
+  #
+  #    Cardinality:  *
+  #
+  #    Special notes:  The TYPE parameter MAY be used to characterize the
+  #       related entity.  It contains a comma-separated list of values that
+  #       are registered with IANA as described in Section 10.2.  The
+  #       registry is pre-populated with the values defined in [xfn].  This
+  #       document also specifies two additional values:
+  #
+  #       agent:  an entity who may sometimes act on behalf of the entity
+  #          associated with the vCard.
+  #
+  #       emergency:  indicates an emergency contact
+  #
+  #    ABNF:
+  #
+  #      RELATED-param = RELATED-param-uri / RELATED-param-text
+  #      RELATED-value = URI / text
+  #        ; Parameter and value MUST match.
+  #
+  #      RELATED-param-uri = "VALUE=uri" / mediatype-param
+  #      RELATED-param-text = "VALUE=text" / language-param
+  #
+  #      RELATED-param =/ pid-param / pref-param / altid-param / type-param
+  #                     / any-param
+  #
+  #      type-param-related = related-type-value *("," related-type-value)
+  #        ; type-param-related MUST NOT be used with a property other than
+  #        ; RELATED.
+  #
+  #      related-type-value = "contact" / "acquaintance" / "friend" / "met"
+  #                         / "co-worker" / "colleague" / "co-resident"
+  #                         / "neighbor" / "child" / "parent"
+  #                         / "sibling" / "spouse" / "kin" / "muse"
+  #                         / "crush" / "date" / "sweetheart" / "me"
+  #                         / "agent" / "emergency"
+  #
+  #    Examples:
+  #
+  #    RELATED;TYPE=friend:urn:uuid:f81d4fae-7dec-11d0-a765-00a0c91e6bf6
+  #    RELATED;TYPE=contact:http://example.com/directory/jdoe.vcf
+  #    RELATED;TYPE=co-worker;VALUE=text:Please contact my assistant Jane
+  #     Doe for any inquiries.
+  def related do
+    optional(params([:value, :related_type, :altid, :pid, :pref, :any]))
+    |> ignore(colon())
+    |> concat(choice([
+        uri(),
+        text()
+      ])
+    |> unwrap_and_tag(:value))
   end
 
   # 6.7.3.  PRODID

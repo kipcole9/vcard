@@ -9,4 +9,37 @@ X-PHONETIC-LAST-NAME:Last
 UID:100d8a79-a614-4a65-959f-80a014779d41
 X-ABUID:96F54E35-D372-4471-AAD8-041E119E781A:ABPerson
 KIND:individual
+ANNIVERSARY:19960415
+ANNIVERSARY:19960415T2345
+GENDER:M
+GENDER:F
+GENDER:M;Fellow
+GENDER:F;grrrl
+GENDER:O;intersex
+GENDER:;it's complicated
+LANG;TYPE=work;PREF=1:en
+LANG;TYPE=work;PREF=2:fr
+LANG;TYPE=home:fr
+TITLE:Research Scientist
+ROLE:Project Leader
+TZ:Raleigh/North America
+TZ;VALUE=utc-offset:-0500
+MEMBER:mailto:subscriber1@example.com
+MEMBER:xmpp:subscriber2@example.com
+MEMBER:sip:subscriber3@example.com
+MEMBER:tel:+1-418-555-5555
+RELATED;TYPE=friend:urn:uuid:f81d4fae-7dec-11d0-a765-00a0c91e6bf6
+RELATED;TYPE=contact:http://example.com/directory/jdoe.vcf
+RELATED;TYPE=co-worker;VALUE=text:Please contact my assistant Jane
+ Doe for any inquiries.
+ORG:ABC\, Inc.;North American Division;Marketing
+LOGO:http://www.example.com/pub/logos/abccorp.jpg
+LOGO:data:image/jpeg;base64,MIICajCCAdOgAwIBAgICBEUwDQYJKoZIhvc
+ AQEEBQAwdzELMAkGA1UEBhMCVVMxLDAqBgNVBAoTI05ldHNjYXBlIENvbW11bm
+ ljYXRpb25zIENvcnBvcmF0aW9uMRwwGgYDVQQLExNJbmZvcm1hdGlvbiBTeXN0
+GEO:geo:37.386013,-122.082932
+IMPP;PREF=1:xmpp:alice@example.com
+ADR;GEO="geo:12.3457,78.910";LABEL=lable1,"label2";LABEL="Mr. John Q. Public, Esq.\nMail Drop:
+ TNE QB\n123 Main Street\nAny Town, CA  91921-1234\nU.S.A.":;;123 Main
+ Street;Any Town;CA;91921-1234;U.S.A.
 END:VCARD

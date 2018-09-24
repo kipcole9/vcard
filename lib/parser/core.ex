@@ -207,27 +207,6 @@ defmodule VCard.Parser.Core do
   #      second = 2DIGIT  ; 00-58/59/60 depending on leap second
   #      zone   = utc-designator / utc-offset
   #      utc-designator = %x5A  ; uppercase "Z"
-  #
-  #      date          = year    [month  day]
-  #                    / year "-" month
-  #                    / "--"     month [day]
-  #                    / "--"      "-"   day
-  #      date-noreduc  = year     month  day
-  #                    / "--"     month  day
-  #                    / "--"      "-"   day
-  #      date-complete = year     month  day
-  #
-  #      time          = hour [minute [second]] [zone]
-  #                    /  "-"  minute [second]  [zone]
-  #                    /  "-"   "-"    second   [zone]
-  #      time-notrunc  = hour [minute [second]] [zone]
-  #      time-complete = hour  minute  second   [zone]
-  #      time-designator = %x54  ; uppercase "T"
-  #      date-time = date-noreduc  time-designator time-notrunc
-  #      timestamp = date-complete time-designator time-complete
-  #
-  #      date-and-or-time = date-time / date / time-designator time
-  #
   #      utc-offset = sign hour [minute]
   def year do
     integer(4) |> unwrap_and_tag(:year)
@@ -258,22 +237,106 @@ defmodule VCard.Parser.Core do
   end
 
   def utc_offset do
-    ascii_char([?+, ?-])
-    |> hour()
-    |> minute()
+    ascii_char([?+, ?-]) |> tag(:direction)
+    |> concat(hour())
+    |> concat(minute())
     |> tag(:offset)
   end
 
-  # def zone do
-  #   choice([utc_designator(), utc_offset()])
-  # end
+  def zone do
+    choice([utc_designator(), utc_offset()])
+  end
 
+  #      date          = year    [month  day]
+  #                    / year "-" month
+  #                    / "--"     month [day]
+  #                    / "--"      "-"   day
+  #      date-noreduc  = year     month  day
+  #                    / "--"     month  day
+  #                    / "--"      "-"   day
+  #      date-complete = year     month  day
   def date do
     choice([
       year() |> optional(month() |> concat(day())),
       year() |> ignore(ascii_char([?-])) |> concat(month()),
-      ignore(string("--")) |> concat(month()) |> optional(day()),
-      ignore(string("--")) |> ignore(ascii_char([?-])) |> concat(day())
+      ignore(string("---")) |> concat(day()),
+      ignore(string("--")) |> concat(month()) |> optional(day())
     ])
+  end
+
+  def date_noreduc do
+    choice([
+      year() |> concat(month()) |> concat(day()),
+      ignore(string("---")) |> concat(day()),
+      ignore(string("--")) |> concat(month()) |> concat(day())
+    ])
+  end
+
+  def date_complete do
+    year() |> concat(month()) |> concat(day())
+  end
+
+  #      time          = hour [minute [second]] [zone]
+  #                    /  "-"  minute [second]  [zone]
+  #                    /  "-"   "-"    second   [zone]
+  def time do
+    choice([
+      hour() |> optional(minute() |> optional(second())) |> optional(zone()),
+      ignore(ascii_char([?-])) |> concat(minute()) |> optional(second()) |> optional(zone()),
+      ignore(string("--")) |> concat(second()) |> optional(zone())
+    ])
+  end
+
+  #      time-notrunc  = hour [minute [second]] [zone]
+  #      time-complete = hour  minute  second   [zone]
+  #      time-designator = %x54  ; uppercase "T"
+  def time_notrunc do
+    hour() |> optional(minute() |> optional(second())) |> optional(zone())
+  end
+
+  def time_complete do
+    hour() |> concat(minute()) |> concat(second()) |> optional(zone())
+  end
+
+  def time_designator do
+    ascii_char([?T])
+  end
+
+  #      date-time = date-noreduc  time-designator time-notrunc
+  #      timestamp = date-complete time-designator time-complete
+  def date_time do
+    date_noreduc() |> ignore(time_designator()) |> concat(time_notrunc())
+  end
+
+  def timestamp do
+    date_complete() |> ignore(time_designator()) |> concat(time_complete())
+  end
+
+  #      date-and-or-time = date-time / date / time-designator time
+  def date_and_or_time do
+    choice([
+      date_time(),
+      date(),
+      ignore(time_designator()) |> concat(time())
+    ])
+  end
+
+  @unreserved [?0..?9, ?a..?z, ?A..?Z, ?-, ?., ?_, ?~]
+  @reserved [?%, ?#, ?/, ?%, ?@, ?:, ??]
+  @subdelims [?!, ?$, ?&, ?', ?(, ?), ?*, ?+, ?;, ?,, ?=]
+
+  def scheme do
+    ascii_string([?a..?z, ?A..?Z, ?0..?9], min: 1)
+  end
+
+  def uri do
+    scheme()
+    |> ignore(colon())
+    |> ascii_string(@unreserved ++ @reserved ++ @subdelims, min: 1)
+    |> reduce({Enum, :join, [":"]})
+  end
+
+  def default_nil(_, context, _, _) do
+    {[nil], context}
   end
 end

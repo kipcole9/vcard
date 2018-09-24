@@ -2,6 +2,9 @@ defmodule VCard.Parser.Params do
   import NimbleParsec
   import VCard.Parser.Core
 
+  NimbleCSV.define VCard.Parser.Params.Splitter, separator: ",", escape: "\""
+  alias VCard.Parser.Params.Splitter
+
   @all_param_types [:language, :value, :pref, :pid, :type, :geo, :tz, :sort_as, :calscale, :any]
 
   def params(valid_params \\ @all_param_types) do
@@ -33,6 +36,7 @@ defmodule VCard.Parser.Params do
     |> ignore(equals())
     |> concat(param_value())
     |> repeat(ignore(comma() |> concat(param_value())))
+    |> wrap
     |> reduce(:reduce_param)
   end
 
@@ -72,6 +76,18 @@ defmodule VCard.Parser.Params do
     anycase_string("calscale")
   end
 
+  def label do
+    anycase_string("label")
+  end
+
+  def geo do
+    anycase_string("geo")
+  end
+
+  def tz do
+    anycase_string("tz")
+  end
+
   def any do
     x_name()
   end
@@ -81,10 +97,15 @@ defmodule VCard.Parser.Params do
     choice([
       quoted_string(),
       non_ascii(),
-      safe_string(),
+      safe_string()
     ])
     |> repeat
-    |> reduce(:split_at_commas)
+  end
+
+  def what(rest, args, context, _, _) do
+    IO.puts "Args #{inspect args}"
+    IO.puts "Rest #{rest}"
+    {args, context}
   end
 
   def group_params(list) do
@@ -98,15 +119,13 @@ defmodule VCard.Parser.Params do
     end)
   end
 
-  @splitter Regex.compile!("(?<!\\\\)[,]")
   def split_at_commas(list) do
-    list
-    |> Enum.join
-    |> String.split(@splitter)
+    Splitter.parse_enumerable(["" | list])
+    |> List.flatten
   end
 
-  def reduce_param([key, value]) do
-    {String.downcase(key), value}
+  def reduce_param([[key | values]]) do
+    {String.downcase(key), values}
   end
 
 end

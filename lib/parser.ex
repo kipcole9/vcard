@@ -36,6 +36,9 @@ defmodule VCard.Parser do
   defparsec :property,
     content_line()
 
+  defparsec :uri,
+    uri()
+
   defp invalid_property_check("", _context, _line, _offset) do
     {:error, "unexpected end of vcard"}
   end

@@ -1,8 +1,6 @@
 defmodule VCard.Parser do
   import NimbleParsec
-  import VCard.Parser.Grammar
-  import VCard.Parser.Core
-  import VCard.Parser.Params
+  import VCard.Parser.{Grammar, Core, Params, Types}
   import VCard.Parser.Property, only: [version: 0]
 
   def parse(vcard_text, rule \\ :parse_vcard) when is_binary(vcard_text) do

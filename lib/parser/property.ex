@@ -1,6 +1,7 @@
 defmodule VCard.Parser.Property do
   import NimbleParsec
   import VCard.Parser.Core
+  import VCard.Parser.Types
   import VCard.Parser.Params, except: [value: 0]
 
   # 6.1.3.  SOURCE
@@ -772,9 +773,9 @@ defmodule VCard.Parser.Property do
     optional(params([:value, :type, :mediatype, :altid, :pid, :pref, :any]))
     |> ignore(colon())
     |> concat(choice([
-        utc_offset(),
-        text()
-       ]) |> unwrap_and_tag(:value)
+        utc_offset() |> tag(:value),
+        text() |> unwrap_and_tag(:value)
+       ])
     )
   end
 
@@ -1037,12 +1038,69 @@ defmodule VCard.Parser.Property do
   #    RELATED;TYPE=co-worker;VALUE=text:Please contact my assistant Jane
   #     Doe for any inquiries.
   def related do
-    optional(params([:value, :related_type, :altid, :pid, :pref, :any]))
+    optional(params([:value, :type, :altid, :pid, :pref, :any]))
     |> ignore(colon())
     |> concat(choice([
         uri(),
         text()
       ])
+    |> unwrap_and_tag(:value))
+  end
+
+  # 6.7.1.  CATEGORIES
+  #
+  #    Purpose:  To specify application category information about the
+  #       vCard, also known as "tags".
+  #
+  #    Value type:  One or more text values separated by a COMMA character
+  #       (U+002C).
+  #
+  #    Cardinality:  *
+  #
+  #    ABNF:
+  #
+  #      CATEGORIES-param = "VALUE=text" / pid-param / pref-param
+  #                       / type-param / altid-param / any-param
+  #      CATEGORIES-value = text-list
+  #
+  #    Example:
+  #
+  #            CATEGORIES:TRAVEL AGENT
+  #
+  #            CATEGORIES:INTERNET,IETF,INDUSTRY,INFORMATION TECHNOLOGY
+  def categories do
+    optional(params([:value, :type, :altid, :pid, :pref, :any]))
+    |> ignore(colon())
+    |> concat(text_list()
+    |> tag(:value))
+  end
+
+  # 6.7.2.  NOTE
+  #
+  #    Purpose:  To specify supplemental information or a comment that is
+  #       associated with the vCard.
+  #
+  #    Value type:  A single text value.
+  #
+  #    Cardinality:  *
+  #
+  #    Special notes:  The property is based on the X.520 Description
+  #       attribute [CCITT.X520.1988].
+  #
+  #    ABNF:
+  #
+  #      NOTE-param = "VALUE=text" / language-param / pid-param / pref-param
+  #                 / type-param / altid-param / any-param
+  #      NOTE-value = text
+  #
+  #    Example:
+  #
+  #            NOTE:This fax number is operational 0800 to 1715
+  #              EST\, Mon-Fri.
+  def note do
+    optional(params([:value, :type, :language, :altid, :pid, :pref, :any]))
+    |> ignore(colon())
+    |> concat(text()
     |> unwrap_and_tag(:value))
   end
 
@@ -1072,6 +1130,64 @@ defmodule VCard.Parser.Property do
     optional(params([:value, :any]))
     |> ignore(colon())
     |> concat(text() |> unwrap_and_tag(:value))
+  end
+
+  # 6.7.4.  REV
+  #
+  #    Purpose:  To specify revision information about the current vCard.
+  #
+  #    Value type:  A single timestamp value.
+  #
+  #    Cardinality:  *1
+  #
+  #    Special notes:  The value distinguishes the current revision of the
+  #       information in this vCard for other renditions of the information.
+  #
+  #    ABNF:
+  #
+  #      REV-param = "VALUE=timestamp" / any-param
+  #      REV-value = timestamp
+  #
+  #    Example:
+  #
+  #            REV:19951031T222710Z
+  def rev do
+    optional(params([:value, :any]))
+    |> ignore(colon())
+    |> concat(timestamp() |> tag(:value))
+  end
+
+  # 6.7.5.  SOUND
+  #
+  #    Purpose:  To specify a digital sound content information that
+  #       annotates some aspect of the vCard.  This property is often used
+  #       to specify the proper pronunciation of the name property value of
+  #       the vCard.
+  #
+  #    Value type:  A single URI.
+  #
+  #    Cardinality:  *
+  #
+  #    ABNF:
+  #
+  #      SOUND-param = "VALUE=uri" / language-param / pid-param / pref-param
+  #                  / type-param / mediatype-param / altid-param
+  #                  / any-param
+  #      SOUND-value = URI
+  #
+  #    Example:
+  #
+  #      SOUND:CID:JOHNQPUBLIC.part8.19960229T080000.xyzMail@example.com
+  #
+  #      SOUND:data:audio/basic;base64,MIICajCCAdOgAwIBAgICBEUwDQYJKoZIh
+  #       AQEEBQAwdzELMAkGA1UEBhMCVVMxLDAqBgNVBAoTI05ldHNjYXBlIENvbW11bm
+  #       ljYXRpb25zIENvcnBvcmF0aW9uMRwwGgYDVQQLExNJbmZvcm1hdGlvbiBTeXN0
+  #       <...the remainder of base64-encoded data...>
+  def sound do
+    optional(params([:value, :type, :mediatype, :language, :altid, :pid, :pref, :any]))
+    |> ignore(colon())
+    |> concat(uri()
+    |> unwrap_and_tag(:value))
   end
 
   # 6.7.6.  UID
@@ -1154,6 +1270,32 @@ defmodule VCard.Parser.Property do
     |> concat(integer(min: 1) |> ignore(semicolon()) |> concat(text()) |> tag(:value))
   end
 
+  # 6.7.8.  URL
+  #
+  #    Purpose:  To specify a uniform resource locator associated with the
+  #       object to which the vCard refers.  Examples for individuals
+  #       include personal web sites, blogs, and social networking site
+  #       identifiers.
+  #
+  #    Cardinality:  *
+  #
+  #    Value type:  A single uri value.
+  #
+  #    ABNF:
+  #
+  #      URL-param = "VALUE=uri" / pid-param / pref-param / type-param
+  #                / mediatype-param / altid-param / any-param
+  #      URL-value = URI
+  #
+  #    Example:
+  #
+  #            URL:http://example.org/restaurant.french/~chezchic.html
+  def url do
+    optional(params([:value, :type, :mediatype, :altid, :pid, :pref, :any]))
+    |> ignore(colon())
+    |> concat(uri() |> unwrap_and_tag(:value))
+  end
+
   # 6.7.9.  VERSION
   #
   #    Purpose:  To specify the version of the vCard specification used to
@@ -1195,6 +1337,145 @@ defmodule VCard.Parser.Property do
     |> reduce({Enum, :join, []})
     |> unwrap_and_tag(:value)
     |> label("a version number")
+  end
+
+  # 6.8.1.  KEY
+  #
+  #    Purpose:  To specify a public key or authentication certificate
+  #       associated with the object that the vCard represents.
+  #
+  #    Value type:  A single URI.  It can also be reset to a text value.
+  #
+  #    Cardinality:  *
+  #
+  #    ABNF:
+  #
+  #      KEY-param = KEY-uri-param / KEY-text-param
+  #      KEY-value = KEY-uri-value / KEY-text-value
+  #        ; Value and parameter MUST match.
+  #
+  #      KEY-uri-param = "VALUE=uri" / mediatype-param
+  #      KEY-uri-value = URI
+  #
+  #      KEY-text-param = "VALUE=text"
+  #      KEY-text-value = text
+  #
+  #      KEY-param =/ altid-param / pid-param / pref-param / type-param
+  #                 / any-param
+  #
+  #    Examples:
+  #
+  #      KEY:http://www.example.com/keys/jdoe.cer
+  #
+  #      KEY;MEDIATYPE=application/pgp-keys:ftp://example.com/keys/jdoe
+  #
+  #      KEY:data:application/pgp-keys;base64,MIICajCCAdOgAwIBAgICBE
+  #       UwDQYJKoZIhvcNAQEEBQAwdzELMAkGA1UEBhMCVVMxLDAqBgNVBAoTI05l
+  #       <... remainder of base64-encoded data ...>
+  def key do
+    optional(params([:value, :type, :mediatype, :altid, :pid, :pref, :any]))
+    |> ignore(colon())
+    |> concat(choice([uri(), text()])
+    |> unwrap_and_tag(:value))
+  end
+
+  # 6.9.1.  FBURL
+  #
+  #    Purpose:  To specify the URI for the busy time associated with the
+  #       object that the vCard represents.
+  #
+  #    Value type:  A single URI value.
+  #
+  #    Cardinality:  *
+  #
+  #    Special notes:  Where multiple FBURL properties are specified, the
+  #       default FBURL property is indicated with the PREF parameter.  The
+  #       FTP [RFC1738] or HTTP [RFC2616] type of URI points to an iCalendar
+  #       [RFC5545] object associated with a snapshot of the next few weeks
+  #       or months of busy time data.  If the iCalendar object is
+  #       represented as a file or document, its file extension should be
+  #       ".ifb".
+  #
+  #    ABNF:
+  #
+  #      FBURL-param = "VALUE=uri" / pid-param / pref-param / type-param
+  #                  / mediatype-param / altid-param / any-param
+  #      FBURL-value = URI
+  #
+  #    Examples:
+  #
+  #      FBURL;PREF=1:http://www.example.com/busy/janedoe
+  #      FBURL;MEDIATYPE=text/calendar:ftp://example.com/busy/project-a.ifb
+  def fburl do
+    optional(params([:value, :type, :mediatype, :altid, :pid, :pref, :any]))
+    |> ignore(colon())
+    |> concat(uri()
+    |> unwrap_and_tag(:value))
+  end
+
+  # 6.9.2.  CALADRURI
+  #
+  #    Purpose:  To specify the calendar user address [RFC5545] to which a
+  #       scheduling request [RFC5546] should be sent for the object
+  #       represented by the vCard.
+  #
+  #    Value type:  A single URI value.
+  #
+  #    Cardinality:  *
+  #
+  #    Special notes:  Where multiple CALADRURI properties are specified,
+  #       the default CALADRURI property is indicated with the PREF
+  #       parameter.
+  #
+  #    ABNF:
+  #
+  #      CALADRURI-param = "VALUE=uri" / pid-param / pref-param / type-param
+  #                      / mediatype-param / altid-param / any-param
+  #      CALADRURI-value = URI
+  #
+  #    Example:
+  #
+  #      CALADRURI;PREF=1:mailto:janedoe@example.com
+  #      CALADRURI:http://example.com/calendar/jdoe
+  def caladruri do
+    optional(params([:value, :type, :mediatype, :altid, :pid, :pref, :any]))
+    |> ignore(colon())
+    |> concat(uri()
+    |> unwrap_and_tag(:value))
+  end
+
+  # 6.9.3.  CALURI
+  #
+  #    Purpose:  To specify the URI for a calendar associated with the
+  #       object represented by the vCard.
+  #
+  #    Value type:  A single URI value.
+  #
+  #    Cardinality:  *
+  #
+  #    Special notes:  Where multiple CALURI properties are specified, the
+  #       default CALURI property is indicated with the PREF parameter.  The
+  #       property should contain a URI pointing to an iCalendar [RFC5545]
+  #
+  #       object associated with a snapshot of the user's calendar store.
+  #       If the iCalendar object is represented as a file or document, its
+  #       file extension should be ".ics".
+  #
+  #    ABNF:
+  #
+  #      CALURI-param = "VALUE=uri" / pid-param / pref-param / type-param
+  #                   / mediatype-param / altid-param / any-param
+  #      CALURI-value = URI
+  #
+  #    Examples:
+  #
+  #      CALURI;PREF=1:http://cal.example.com/calA
+  #      CALURI;MEDIATYPE=text/calendar:ftp://ftp.example.com/calA.ics
+  def caluri do
+    optional(params([:value, :type, :mediatype, :altid, :pid, :pref, :any]))
+    |> ignore(colon())
+    |> concat(uri()
+    |> unwrap_and_tag(:value))
   end
 
   def x_property do

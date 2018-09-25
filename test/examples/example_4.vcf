@@ -28,18 +28,38 @@ MEMBER:mailto:subscriber1@example.com
 MEMBER:xmpp:subscriber2@example.com
 MEMBER:sip:subscriber3@example.com
 MEMBER:tel:+1-418-555-5555
+KEY:http://www.example.com/keys/jdoe.cer
+KEY;MEDIATYPE=application/pgp-keys:ftp://example.com/keys/jdoe
+KEY:data:application/pgp-keys;base64,MIICajCCAdOgAwIBAgICBE
+ UwDQYJKoZIhvcNAQEEBQAwdzELMAkGA1UEBhMCVVMxLDAqBgNVBAoTI05l
+NOTE:This fax number is operational 0800 to 1715
+ EST\, Mon-Fri
+CATEGORIES:TRAVEL AGENT
+CATEGORIES:INTERNET,IETF,INDUSTRY,INFORMATION TECHNOLOGY
 RELATED;TYPE=friend:urn:uuid:f81d4fae-7dec-11d0-a765-00a0c91e6bf6
 RELATED;TYPE=contact:http://example.com/directory/jdoe.vcf
 RELATED;TYPE=co-worker;VALUE=text:Please contact my assistant Jane
  Doe for any inquiries.
 ORG:ABC\, Inc.;North American Division;Marketing
+ADR;GEO="geo:12.3457,78.910";LABEL=lable1,"label2";LABEL="Mr. John Q. Public, Esq.\nMail Drop:
+ TNE QB\n123 Main Street\nAny Town, CA  91921-1234\nU.S.A.":;;123 Main
+ Street;Any Town;CA;91921-1234;U.S.A.
 LOGO:http://www.example.com/pub/logos/abccorp.jpg
 LOGO:data:image/jpeg;base64,MIICajCCAdOgAwIBAgICBEUwDQYJKoZIhvc
  AQEEBQAwdzELMAkGA1UEBhMCVVMxLDAqBgNVBAoTI05ldHNjYXBlIENvbW11bm
  ljYXRpb25zIENvcnBvcmF0aW9uMRwwGgYDVQQLExNJbmZvcm1hdGlvbiBTeXN0
 GEO:geo:37.386013,-122.082932
 IMPP;PREF=1:xmpp:alice@example.com
-ADR;GEO="geo:12.3457,78.910";LABEL=lable1,"label2";LABEL="Mr. John Q. Public, Esq.\nMail Drop:
- TNE QB\n123 Main Street\nAny Town, CA  91921-1234\nU.S.A.":;;123 Main
- Street;Any Town;CA;91921-1234;U.S.A.
+FBURL;PREF=1:http://www.example.com/busy/janedoe
+FBURL;MEDIATYPE=text/calendar:ftp://example.com/busy/project-a.ifb
+CALADRURI;PREF=1:mailto:janedoe@example.com
+CALADRURI:http://example.com/calendar/jdoe
+CALURI;PREF=1:http://cal.example.com/calA
+CALURI;MEDIATYPE=text/calendar:ftp://ftp.example.com/calA.ics
+SOUND:CID:JOHNQPUBLIC.part8.19960229T080000.xyzMail@example.com
+SOUND:data:audio/basic;base64,MIICajCCAdOgAwIBAgICBEUwDQYJKoZIh
+ AQEEBQAwdzELMAkGA1UEBhMCVVMxLDAqBgNVBAoTI05ldHNjYXBlIENvbW11bm
+ ljYXRpb25zIENvcnBvcmF0aW9uMRwwGgYDVQQLExNJbmZvcm1hdGlvbiBTeXN0
+REV:19951031T222710Z
+URL:http://example.org/restaurant.french/~chezchic.html
 END:VCARD

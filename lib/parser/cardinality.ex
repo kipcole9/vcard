@@ -20,9 +20,9 @@ defmodule VCard.Parser.Cardinality do
   # below (date, time, integer, float).
 
   @doc false
-  def cardinality_valid?(property, count) do
+  def valid?(property, count) do
     valid_range = cardinality(property)
-    case cardinality_valid?(property, count, valid_range) do
+    case cardinality_valid?(count, valid_range) do
       true -> :ok
       false -> {:error, "Invalid cardinality for #{inspect property}. " <>
                         "Valid cardinality is #{inspect valid_range}"}
@@ -30,9 +30,9 @@ defmodule VCard.Parser.Cardinality do
   end
 
   @doc false
-  def cardinality_valid?(property, count, [min, :infinity]) when count >= min do: true
-  def cardinality_valid?(property, count, [min, max]) when count >= min and count <= max, do: true
-  def cardinality_valid?(property, count, [min, max]) when count >= min and count <= max, do: false
+  def cardinality_valid?(count, [min, :infinity]) when count >= min, do: true
+  def cardinality_valid?(count, [min, max]) when count >= min and count <= max, do: true
+  def cardinality_valid?(_count, [_min, _max]), do: false
 
   @doc false
   def cardinality("source"), do: [0, :infinity]

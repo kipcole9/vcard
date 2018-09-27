@@ -13,6 +13,14 @@ defmodule VCard.Parser do
     String.replace(vcard_text, @folder, "")
   end
 
+  def group(vcard) when is_list(vcard) do
+    Enum.group_by(vcard, &Keyword.get(&1, :property))
+  end
+
+  def cardinality(grouped_card) when is_map(grouped_card) do
+    Map.new(grouped_card, fn {property, values} ->{property, length(values)} end)
+  end
+
   defp unwrap({:ok, acc, "", _, _, _}) when is_list(acc),
     do: {:ok, acc}
 

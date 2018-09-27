@@ -10,55 +10,62 @@ defmodule VCard.Parser.Core do
       ascii_char([@cr]) |> ascii_char([@lf]),
       ascii_char([@lf])
     ])
-    |> label("Expected a newline (either CRLF or LF)")
+    |> label("a newline (either CRLF or LF)")
   end
 
   def colon do
     ascii_char([?:])
+    |> label("a colon")
   end
 
   def semicolon do
     ascii_char([?;])
+    |> label("a semicolon")
   end
 
   def period do
     ascii_char([?.])
+    |> label("a dot character")
   end
 
   def comma do
     ascii_char([?,])
-  end
-
-  def decimal_digit do
-    ascii_string([?0..?9], min: 1)
+    |> label("a comma")
   end
 
   def digit do
     ascii_char([?0..?9])
+    |> label("a decimal digit")
   end
 
   def equals do
     ascii_char([?=])
+    |> label("an equals sign")
   end
 
   def dquote do
     ascii_char([?"])
+    |> label("a double quote character")
   end
 
   def hex_string do
     ascii_string([?a..?f, ?A..?F, ?0..?9], min: 1)
+    |> label("a hexidecimal digit")
   end
 
   def alphanum_and_dash do
     ascii_string([?a..?z, ?A..?Z, ?0..?9, ?-], min: 1)
+    |> label("an alphanumeric character or a dash")
   end
 
   def alphabetic do
     ascii_string([?a..?z, ?A..?Z], min: 1)
+    |> label("an alphabetic character")
   end
 
   def alphanumeric do
     ascii_string([?a..?z, ?A..?Z, ?0..?9], min: 1)
+    |> label("an alphanumeric character")
   end
 
   def anycase_string(string) do

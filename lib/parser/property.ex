@@ -1,8 +1,11 @@
 defmodule VCard.Parser.Property do
+  @moduledoc """
+  Combination parsers for each of the properties defined
+  for the VCard standard RFC6350
+  """
+
   import NimbleParsec
-  import VCard.Parser.Core
-  import VCard.Parser.Types
-  import VCard.Parser.Params, except: [value: 0]
+  import VCard.Parser.{Core, Params, Types}
 
   # 6.1.3.  SOURCE
   #
@@ -32,11 +35,13 @@ defmodule VCard.Parser.Property do
   #    Examples:
   #
   #      SOURCE:ldap://ldap.example.com/cn=Babs%20Jensen,%20o=Babsco,%20c=US
+  @doc false
   def source do
     optional(params([:value, :pid, :pref, :altid, :mediatype, :any]))
     |> ignore(colon())
-    |> concat(text())
+    |> concat(uri())
     |> unwrap_and_tag(:value)
+    |> label("a source as a uri")
   end
 
   # 6.1.4.  KIND
@@ -162,6 +167,7 @@ defmodule VCard.Parser.Property do
   #          FN:ABC Marketing
   #          ORG:ABC\, Inc.;North American Division;Marketing
   #          END:VCARD
+  @doc false
   def kind do
     optional(params([:value, :any]))
     |> ignore(colon())
@@ -206,10 +212,12 @@ defmodule VCard.Parser.Property do
   #
   #      XML-param = "VALUE=text" / altid-param
   #      XML-value = text
+  @doc false
   def xml do
     optional(params([:value, :altid]))
     |> ignore(colon())
     |> concat(text() |> unwrap_and_tag(:value))
+    |> label("xml in a textual format")
   end
 
   # 6.2.1.  FN
@@ -234,10 +242,12 @@ defmodule VCard.Parser.Property do
   #    Example:
   #
   #          FN:Mr. John Q. Public\, Esq.
+  @doc false
   def fn_ do
     optional(params([:value, :type, :language, :altid, :pid, :pref, :any]))
     |> ignore(colon())
     |> concat(text() |> unwrap_and_tag(:value))
+    |> label("a full name string")
   end
 
   # 6.2.2.  N
@@ -274,10 +284,12 @@ defmodule VCard.Parser.Property do
   #              N:Public;John;Quinlan;Mr.;Esq.
   #
   #              N:Stevenson;John;Philip,Paul;Dr.;Jr.,M.D.,A.C.P.
+  @doc false
   def n do
     optional(params([:value, :sort_as, :language, :altid, :any]))
     |> ignore(colon())
     |> concat(list_component() |> tag(:value))
+    |> label("a semicolon separated list of name parts as strings")
   end
 
   # 6.2.3.  NICKNAME
@@ -308,10 +320,12 @@ defmodule VCard.Parser.Property do
   #              NICKNAME:Jim,Jimmie
   #
   #              NICKNAME;TYPE=work:Boss
+  @doc false
   def nickname do
     optional(params([:value, :type, :language, :altid, :pid, :pref, :any]))
     |> ignore(colon())
     |> concat(text_list() |> tag(:value))
+    |> label("a nickname as a string")
   end
 
   # 6.2.4.  PHOTO
@@ -337,10 +351,12 @@ defmodule VCard.Parser.Property do
   #         AQEEBQAwdzELMAkGA1UEBhMCVVMxLDAqBgNVBAoTI05ldHNjYXBlIENvbW11bm
   #         ljYXRpb25zIENvcnBvcmF0aW9uMRwwGgYDVQQLExNJbmZvcm1hdGlvbiBTeXN0
   #         <...remainder of base64-encoded data...>
+  @doc false
   def photo do
     optional(params([:value, :type, :altid, :pid, :pref, :mediatype, :any]))
     |> ignore(colon())
-    |> concat(text_list() |> tag(:value))
+    |> concat(uri() |> tag(:value))
+    |> label("a uri representing a photo")
   end
 
   # 6.2.5.  BDAY
@@ -372,6 +388,7 @@ defmodule VCard.Parser.Property do
   #              BDAY:--0415
   #              BDAY;19531015T231000Z
   #              BDAY;VALUE=text:circa 1800
+  @doc false
   def bday do
     optional(params([:value, :altid, :calscale, :any]))
     |> ignore(colon())
@@ -401,6 +418,7 @@ defmodule VCard.Parser.Property do
   #    Examples:
   #
   #              ANNIVERSARY:19960415
+  @doc false
   def anniversary do
     optional(params([:value, :altid, :calscale, :any]))
     |> ignore(colon())
@@ -441,6 +459,7 @@ defmodule VCard.Parser.Property do
   #      GENDER:F;grrrl
   #      GENDER:O;intersex
   #      GENDER:;it's complicated
+  @doc false
   def gender do
     optional(params([:value, :any]))
     |> ignore(colon())
@@ -449,6 +468,7 @@ defmodule VCard.Parser.Property do
     |> tag(:value))
   end
 
+  @doc false
   def sex do
     choice([
       anycase_string("m"),
@@ -460,6 +480,7 @@ defmodule VCard.Parser.Property do
     ])
   end
 
+  @doc false
   def gender_identity do
     choice([
       ignore(semicolon()) |> concat(text()),
@@ -541,10 +562,12 @@ defmodule VCard.Parser.Property do
   #      ADR;GEO="geo:12.3457,78.910";LABEL="Mr. John Q. Public, Esq.\n
   #       Mail Drop: TNE QB\n123 Main Street\nAny Town, CA  91921-1234\n
   #       U.S.A.":;;123 Main Street;Any Town;CA;91921-1234;U.S.A.
+  @doc false
   def adr do
     optional(params([:value, :label, :language, :geo, :tz, :altid, :pid, :pref, :type, :any]))
     |> ignore(colon())
     |> concat(list_component() |> tag(:value))
+    |> label("an adr as a comma-separated list of address components")
   end
 
   # 6.4.1.  TEL
@@ -618,10 +641,12 @@ defmodule VCard.Parser.Property do
   #
   #      TEL;VALUE=uri;PREF=1;TYPE="voice,home":tel:+1-555-555-5555;ext=5555
   #      TEL;VALUE=uri;TYPE=home:tel:+33-01-23-45-67
+  @doc false
   def tel do
     optional(params([:value, :type, :altid, :pid, :pref, :any]))
     |> ignore(colon())
-    |> concat(text() |> unwrap_and_tag(:value))
+    |> concat(uri() |> unwrap_and_tag(:value))
+    |> label("a telephone number as a uri")
   end
 
   # 6.4.2.  EMAIL
@@ -654,10 +679,12 @@ defmodule VCard.Parser.Property do
   #            EMAIL;TYPE=work:jqpublic@xyz.example.com
   #
   #            EMAIL;PREF=1:jane_doe@example.com
+  @doc false
   def email do
     optional(params([:value, :type, :altid, :pid, :pref, :any]))
     |> ignore(colon())
     |> concat(text() |> unwrap_and_tag(:value))
+    |> label("an email address as text")
   end
 
   # 6.4.3.  IMPP
@@ -672,13 +699,6 @@ defmodule VCard.Parser.Property do
   #    Special notes:  The property may include the "PREF" parameter to
   #       indicate that this is a preferred address and has the same
   #       semantics as the "PREF" parameter in a TEL property.
-  #
-  #
-  #
-  # Perreault                    Standards Track                   [Page 36]
-  #
-  # RFC 6350                          vCard                      August 2011
-  #
   #
   #       If this property's value is a URI that can be used for voice
   #       and/or video, the TEL property (Section 6.4.1) SHOULD be used in
@@ -696,11 +716,12 @@ defmodule VCard.Parser.Property do
   #    Example:
   #
   #        IMPP;PREF=1:xmpp:alice@example.com
-  #
+  @doc false
   def impp do
     optional(params([:value, :type, :mediatype, :altid, :pid, :pref, :any]))
     |> ignore(colon())
-    |> concat(text() |> unwrap_and_tag(:value))
+    |> concat(uri() |> unwrap_and_tag(:value))
+    |> label("an impp value as a uri")
   end
 
   # 6.4.4.  LANG
@@ -723,10 +744,12 @@ defmodule VCard.Parser.Property do
   #        LANG;TYPE=work;PREF=1:en
   #        LANG;TYPE=work;PREF=2:fr
   #        LANG;TYPE=home:fr
+  @doc false
   def lang do
     optional(params([:value, :type, :altid, :pid, :pref, :any]))
     |> ignore(colon())
     |> concat(text() |> unwrap_and_tag(:value))
+    |> label("language as a lnaguage tag")
   end
 
   # 6.5.1.  TZ
@@ -769,6 +792,7 @@ defmodule VCard.Parser.Property do
   #
   #      TZ;VALUE=utc-offset:-0500
   #        ; Note: utc-offset format is NOT RECOMMENDED.
+  @doc false
   def tz do
     optional(params([:value, :type, :mediatype, :altid, :pid, :pref, :any]))
     |> ignore(colon())
@@ -777,6 +801,7 @@ defmodule VCard.Parser.Property do
         text() |> unwrap_and_tag(:value)
        ])
     )
+    |> label("a timezone as a zone name or offset")
   end
 
   # 6.5.2.  GEO
@@ -800,11 +825,13 @@ defmodule VCard.Parser.Property do
   #    Example:
   #
   #            GEO:geo:37.386013,-122.082932
+  @doc false
   def geo do
     optional(params([:value, :type, :mediatype, :altid, :pid, :pref, :any]))
     |> ignore(colon())
     |> concat(uri()
     |> unwrap_and_tag(:value))
+    |> label("a geo as a uri")
   end
 
   # 6.6.1.  TITLE
@@ -828,11 +855,13 @@ defmodule VCard.Parser.Property do
   #    Example:
   #
   #            TITLE:Research Scientist
+  @doc false
   def title do
     optional(params([:value, :type, :language, :altid, :pid, :pref, :any]))
     |> ignore(colon())
     |> concat(text()
     |> unwrap_and_tag(:value))
+    |> label("a title as text")
   end
 
   # 6.6.2.  ROLE
@@ -859,11 +888,13 @@ defmodule VCard.Parser.Property do
   #    Example:
   #
   #            ROLE:Project Leader
+  @doc false
   def role do
     optional(params([:value, :type, :language, :altid, :pid, :pref, :any]))
     |> ignore(colon())
     |> concat(text()
     |> unwrap_and_tag(:value))
+    |> label("a role as text")
   end
 
   # 6.6.3.  LOGO
@@ -889,11 +920,13 @@ defmodule VCard.Parser.Property do
   #       AQEEBQAwdzELMAkGA1UEBhMCVVMxLDAqBgNVBAoTI05ldHNjYXBlIENvbW11bm
   #       ljYXRpb25zIENvcnBvcmF0aW9uMRwwGgYDVQQLExNJbmZvcm1hdGlvbiBTeXN0
   #       <...the remainder of base64-encoded data...>
+  @doc false
   def logo do
     optional(params([:value, :type, :mediatype, :altid, :pid, :pref, :any]))
     |> ignore(colon())
     |> concat(uri()
     |> unwrap_and_tag(:value))
+    |> label("a logo uri")
   end
 
   # 6.6.4.  ORG
@@ -924,12 +957,14 @@ defmodule VCard.Parser.Property do
   #    organizational unit #1 name, and organizational unit #2 name.
   #
   #            ORG:ABC\, Inc.;North American Division;Marketing
+  @doc false
   def org do
     optional(params([:value, :type, :sort_as, :language, :altid, :pid, :pref, :any]))
     |> ignore(colon())
     |> concat(component()
     |> repeat(ignore(semicolon()) |> concat(component()))
     |> tag(:value))
+    |> label("a semicolon separated list of organization components")
   end
 
   # 6.6.5.  MEMBER
@@ -980,11 +1015,13 @@ defmodule VCard.Parser.Property do
   #      MEMBER:sip:subscriber3@example.com
   #      MEMBER:tel:+1-418-555-5555
   #      END:VCARD
+  @doc false
   def member do
     optional(params([:value, :type, :mediatype, :altid, :pid, :pref, :any]))
     |> ignore(colon())
     |> concat(uri()
     |> unwrap_and_tag(:value))
+    |> label("a member represented as a uri")
   end
 
   # 6.6.6.  RELATED
@@ -1037,6 +1074,7 @@ defmodule VCard.Parser.Property do
   #    RELATED;TYPE=contact:http://example.com/directory/jdoe.vcf
   #    RELATED;TYPE=co-worker;VALUE=text:Please contact my assistant Jane
   #     Doe for any inquiries.
+  @doc false
   def related do
     optional(params([:value, :type, :altid, :pid, :pref, :any]))
     |> ignore(colon())
@@ -1045,6 +1083,7 @@ defmodule VCard.Parser.Property do
         text()
       ])
     |> unwrap_and_tag(:value))
+    |> label("a uri to a text value")
   end
 
   # 6.7.1.  CATEGORIES
@@ -1068,11 +1107,13 @@ defmodule VCard.Parser.Property do
   #            CATEGORIES:TRAVEL AGENT
   #
   #            CATEGORIES:INTERNET,IETF,INDUSTRY,INFORMATION TECHNOLOGY
+  @doc false
   def categories do
     optional(params([:value, :type, :altid, :pid, :pref, :any]))
     |> ignore(colon())
     |> concat(text_list()
     |> tag(:value))
+    |> label("a comma-separated list of categories")
   end
 
   # 6.7.2.  NOTE
@@ -1097,11 +1138,13 @@ defmodule VCard.Parser.Property do
   #
   #            NOTE:This fax number is operational 0800 to 1715
   #              EST\, Mon-Fri.
+  @doc false
   def note do
     optional(params([:value, :type, :language, :altid, :pid, :pref, :any]))
     |> ignore(colon())
     |> concat(text()
     |> unwrap_and_tag(:value))
+    |> label("a text note")
   end
 
   # 6.7.3.  PRODID
@@ -1126,6 +1169,7 @@ defmodule VCard.Parser.Property do
   #    Example:
   #
   #            PRODID:-//ONLINE DIRECTORY//NONSGML Version 1//EN
+  @doc false
   def prodid do
     optional(params([:value, :any]))
     |> ignore(colon())
@@ -1151,6 +1195,7 @@ defmodule VCard.Parser.Property do
   #    Example:
   #
   #            REV:19951031T222710Z
+  @doc false
   def rev do
     optional(params([:value, :any]))
     |> ignore(colon())
@@ -1183,6 +1228,7 @@ defmodule VCard.Parser.Property do
   #       AQEEBQAwdzELMAkGA1UEBhMCVVMxLDAqBgNVBAoTI05ldHNjYXBlIENvbW11bm
   #       ljYXRpb25zIENvcnBvcmF0aW9uMRwwGgYDVQQLExNJbmZvcm1hdGlvbiBTeXN0
   #       <...the remainder of base64-encoded data...>
+  @doc false
   def sound do
     optional(params([:value, :type, :mediatype, :language, :altid, :pid, :pref, :any]))
     |> ignore(colon())
@@ -1222,6 +1268,7 @@ defmodule VCard.Parser.Property do
   #    Example:
   #
   #            UID:urn:uuid:f81d4fae-7dec-11d0-a765-00a0c91e6bf6
+  @doc false
   def uid do
     optional(params([:value]))
     |> ignore(colon())
@@ -1264,6 +1311,7 @@ defmodule VCard.Parser.Property do
   #      EMAIL;PID=4.1,5.2:jdoe@example.com
   #      CLIENTPIDMAP:1;urn:uuid:3df403f4-5924-4bb7-b077-3c711d9eb34b
   #      CLIENTPIDMAP:2;urn:uuid:d89c9c7a-2e1b-4832-82de-7e992d95faa5
+  @doc false
   def clientpidmap do
     optional(params([:any]))
     |> ignore(colon())
@@ -1290,6 +1338,7 @@ defmodule VCard.Parser.Property do
   #    Example:
   #
   #            URL:http://example.org/restaurant.french/~chezchic.html
+  @doc false
   def url do
     optional(params([:value, :type, :mediatype, :altid, :pid, :pref, :any]))
     |> ignore(colon())
@@ -1319,6 +1368,7 @@ defmodule VCard.Parser.Property do
   #    Example:
   #
   #            VERSION:4.0
+  @doc false
   def version do
     anycase_string("version")
     |> replace("version")
@@ -1331,10 +1381,10 @@ defmodule VCard.Parser.Property do
   end
 
   def version_number do
-    decimal_digit()
-    |> ascii_string([?.], min: 1)
-    |> concat(decimal_digit())
-    |> reduce({Enum, :join, []})
+    digit()
+    |> ascii_char([?.])
+    |> concat(digit() )
+    |> reduce({List, :to_string, []})
     |> unwrap_and_tag(:value)
     |> label("a version number")
   end
@@ -1372,11 +1422,13 @@ defmodule VCard.Parser.Property do
   #      KEY:data:application/pgp-keys;base64,MIICajCCAdOgAwIBAgICBE
   #       UwDQYJKoZIhvcNAQEEBQAwdzELMAkGA1UEBhMCVVMxLDAqBgNVBAoTI05l
   #       <... remainder of base64-encoded data ...>
+  @doc false
   def key do
     optional(params([:value, :type, :mediatype, :altid, :pid, :pref, :any]))
     |> ignore(colon())
     |> concat(choice([uri(), text()])
     |> unwrap_and_tag(:value))
+    |> label("a key uri")
   end
 
   # 6.9.1.  FBURL
@@ -1406,11 +1458,13 @@ defmodule VCard.Parser.Property do
   #
   #      FBURL;PREF=1:http://www.example.com/busy/janedoe
   #      FBURL;MEDIATYPE=text/calendar:ftp://example.com/busy/project-a.ifb
+  @doc false
   def fburl do
     optional(params([:value, :type, :mediatype, :altid, :pid, :pref, :any]))
     |> ignore(colon())
     |> concat(uri()
     |> unwrap_and_tag(:value))
+    |> label("a fburl uri")
   end
 
   # 6.9.2.  CALADRURI
@@ -1437,11 +1491,13 @@ defmodule VCard.Parser.Property do
   #
   #      CALADRURI;PREF=1:mailto:janedoe@example.com
   #      CALADRURI:http://example.com/calendar/jdoe
+  @doc false
   def caladruri do
     optional(params([:value, :type, :mediatype, :altid, :pid, :pref, :any]))
     |> ignore(colon())
     |> concat(uri()
     |> unwrap_and_tag(:value))
+    |> label("a caladruri")
   end
 
   # 6.9.3.  CALURI
@@ -1471,13 +1527,16 @@ defmodule VCard.Parser.Property do
   #
   #      CALURI;PREF=1:http://cal.example.com/calA
   #      CALURI;MEDIATYPE=text/calendar:ftp://ftp.example.com/calA.ics
+  @doc false
   def caluri do
     optional(params([:value, :type, :mediatype, :altid, :pid, :pref, :any]))
     |> ignore(colon())
     |> concat(uri()
     |> unwrap_and_tag(:value))
+    |> label("a caluri")
   end
 
+  @doc false
   def x_property do
     ascii_string([?x, ?X], min: 1)
     |> ascii_string([?-], min: 1)
@@ -1487,4 +1546,5 @@ defmodule VCard.Parser.Property do
     |> concat(text() |> unwrap_and_tag(:value))
     |> label("an x- prefix property")
   end
+
 end

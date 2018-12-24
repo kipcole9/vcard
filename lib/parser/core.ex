@@ -69,39 +69,49 @@ defmodule VCard.Parser.Core do
   end
 
   def anycase_string(string) do
-    string
-    |> String.upcase
-    |> String.to_charlist
-    |> Enum.reverse
-    |> char_piper
-    |> reduce({List, :to_string, []})
+    down = String.downcase(string)
+    up = String.upcase(string)
+
+    choice([
+      string(down),
+      string(up)
+    ])
   end
 
-  defp char_piper([c]) when c in ?A..?Z do
-    c
-    |> both_cases
-    |> ascii_char
-  end
-
-  defp char_piper([c | rest]) when c in ?A..?Z do
-    rest
-    |> char_piper
-    |> ascii_char(both_cases(c))
-  end
-
-  defp char_piper([c]) do
-    ascii_char([c])
-  end
-
-  defp char_piper([c | rest]) do
-    rest
-    |> char_piper
-    |> ascii_char([c])
-  end
-
-  defp both_cases(c) do
-    [c, c + 32]
-  end
+  # def anycase_string(string) do
+  #   string
+  #   |> String.upcase
+  #   |> String.to_charlist
+  #   |> Enum.reverse
+  #   |> char_piper
+  #   |> reduce({List, :to_string, []})
+  # end
+  #
+  # defp char_piper([c]) when c in ?A..?Z do
+  #   c
+  #   |> both_cases
+  #   |> ascii_char
+  # end
+  #
+  # defp char_piper([c | rest]) when c in ?A..?Z do
+  #   rest
+  #   |> char_piper
+  #   |> ascii_char(both_cases(c))
+  # end
+  #
+  # defp char_piper([c]) do
+  #   ascii_char([c])
+  # end
+  #
+  # defp char_piper([c | rest]) do
+  #   rest
+  #   |> char_piper
+  #   |> ascii_char([c])
+  # end
+  #
+  # defp both_cases(c) do
+  #   [c, c + 32]
+  # end
 
   def quoted_string do
     ignore(ascii_char([?"]))
@@ -173,7 +183,7 @@ defmodule VCard.Parser.Core do
     ])
     |> repeat
     |> reduce({List, :to_string, []})
-    |> traverse(:unescape)
+    |> post_traverse(:unescape)
   end
 
   # component = "\\" / "\," / "\;" / "\n" / WSP / NON-ASCII
@@ -184,19 +194,19 @@ defmodule VCard.Parser.Core do
   def component do
     choice([
       utf8_char(@others),
-      ascii_char([?\\]) |> ascii_char(@escaped_component ++ @unescaped_component),
+      ascii_char([?\\]) |> ascii_char(@escaped_component),
       ascii_char(@unescaped_component),
     ])
     |> repeat
     |> reduce({List, :to_string, []})
-    |> traverse(:unescape)
+    |> post_traverse(:unescape)
     |> label("bad component")
   end
 
   # list-component = component *("," component)
   def list_component do
     component()
-    |> repeat(ignore(semicolon()) |> concat(component()))
+    |> repeat(ignore(semicolon()) |> optional(component()))
   end
 
   def default_nil(_, context, _, _) do

@@ -49,15 +49,15 @@ defmodule VCard.Parser.Types do
     ascii_char([?+, ?-])
     |> concat(hour())
     |> concat(minute())
-    |> traverse(:calculate_direction)
+    |> post_traverse(:calculate_direction)
   end
 
   def calculate_direction(_rest, [{:minute, minutes}, {:hour, hours}, ?+], context, _, _) do
-    {[{:minutes, minutes}, {:hours, hours}], context}
+    {[{:tz_minute_offset, minutes}, {:tz_hour_offset, hours}], context}
   end
 
   def calculate_direction(_rest, [{:minute, minutes}, {:hour, hours}, ?-], context, _, _) do
-    {[{:minutes, minutes}, {:hours, hours * -1}], context}
+    {[{:tz_minute_offset, minutes}, {:tz_hour_offset, hours * -1}], context}
   end
 
   def zone do

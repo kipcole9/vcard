@@ -463,9 +463,7 @@ defmodule VCard.Parser.Property do
   def gender do
     optional(params([:value, :any]))
     |> ignore(colon())
-    |> concat(sex()
-    |> concat(gender_identity())
-    |> tag(:value))
+    |> optional(sex() |> optional(gender_identity()) |> tag(:value))
   end
 
   @doc false
@@ -475,17 +473,15 @@ defmodule VCard.Parser.Property do
       anycase_string("f"),
       anycase_string("o"),
       anycase_string("n"),
-      anycase_string("u"),
-      lookahead(:default_nil)
+      anycase_string("u")
     ])
+    |> unwrap_and_tag(:gender)
   end
 
   @doc false
   def gender_identity do
-    choice([
-      ignore(semicolon()) |> concat(text()),
-      lookahead(:default_nil)
-    ])
+    ignore(semicolon())
+    |> concat(text() |> unwrap_and_tag(:gender_identity))
   end
 
   # 6.3.1.  ADR
@@ -1370,14 +1366,9 @@ defmodule VCard.Parser.Property do
   #            VERSION:4.0
   @doc false
   def version do
-    anycase_string("version")
-    |> replace("version")
-    |> unwrap_and_tag(:property)
-    |> ignore(colon())
+    ignore(colon())
     |> concat(version_number())
-    |> ignore(crlf())
     |> label("a version property")
-    |> wrap
   end
 
   def version_number do

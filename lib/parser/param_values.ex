@@ -221,8 +221,10 @@ defmodule VCard.Parser.ParamValues do
   #                       / type-param-related / iana-token / x-name
   #              ; This is further defined in individual property sections.
   def param_value(:type) do
-    type()
+    optional(ignore(dquote()))
+    |> concat(type())
     |> repeat(ignore(comma()) |> concat(type()))
+    |> optional(ignore(dquote()))
   end
 
   # 5.7.  MEDIATYPE

@@ -72,6 +72,7 @@ defmodule VCard.Parser.Grammar do
 
   def known_property do
     choice([
+      anycase_string("version")       |> concat(version()),
       anycase_string("source")        |> concat(source()),
       anycase_string("kind")          |> concat(kind()),
       anycase_string("fn")            |> concat(fn_()),

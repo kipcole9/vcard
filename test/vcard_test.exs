@@ -1,10 +1,12 @@
 defmodule VcardTest do
   use ExUnit.Case
-  doctest Vcard
+  doctest VCard
 
-  describe "parsing vcards" do
-    test "greets the world" do
-      assert Vcard.hello() == :world
+  for i <- 1..4 do
+    test "Test of example #{i}" do
+      card = File.read!("test/examples/example_#{unquote(i)}.vcf")
+      parsed = VCard.Parser.parse(card)
+      assert match?({:ok, _}, parsed)
     end
   end
 end

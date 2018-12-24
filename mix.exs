@@ -21,8 +21,9 @@ defmodule Vcard.MixProject do
 
   defp deps do
     [
-      {:nimble_parsec, "~> 0.4"},
-      {:nimble_csv, "~> 0.4"}
+      {:nimble_parsec, git: "https://github.com/plataformatec/nimble_parsec"},
+      {:nimble_csv, "~> 0.4"},
+      {:ex_phone_number, "~> 0.1"}
     ]
   end
 end

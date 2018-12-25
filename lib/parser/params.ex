@@ -7,7 +7,7 @@ defmodule VCard.Parser.Params do
   NimbleCSV.define VCard.Parser.Params.Splitter, separator: ",", escape: "\""
   alias VCard.Parser.Params.Splitter
 
-  @all_param_types [:language, :value, :pref, :pid, :type, :geo, :tz, :sort_as, :calscale, :any]
+  @all_param_types [:language, :value, :pref, :pid, :type, :geo, :tz, :sort_as, :calscale, :encoding, :any]
 
   # Generates a `choice/2` parser for the desired
   # parameters
@@ -33,11 +33,6 @@ defmodule VCard.Parser.Params do
     valid_params
     |> Enum.map(&param/1)
     |> choice()
-    # |> ignore(equals())
-    # |> concat(param_value())
-    # |> repeat(ignore(comma() |> concat(param_value())))
-    # |> wrap
-    # |> reduce(:reduce_param)
   end
 
   def param(valid_param) when is_atom(valid_param) do
@@ -81,6 +76,10 @@ defmodule VCard.Parser.Params do
 
   def sort_as do
     anycase_string("sort_as")
+  end
+
+  def encoding do
+    anycase_string("encoding")
   end
 
   def calscale do

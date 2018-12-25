@@ -38,6 +38,15 @@ defmodule VCard.Parser.Grammar do
     optional(group() |> ignore(period()))
     |> concat(property())
     |> ignore(crlf())
+    |> reduce(:combine_group_and_property)
+  end
+
+  def combine_group_and_property([{:group, _} = group, property]) do
+    [group | property]
+  end
+
+  def combine_group_and_property([property]) do
+    [{:group, "_default"} | property]
   end
 
   #    group = 1*(ALPHA / DIGIT / "-")

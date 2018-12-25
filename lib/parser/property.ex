@@ -353,9 +353,9 @@ defmodule VCard.Parser.Property do
   #         <...remainder of base64-encoded data...>
   @doc false
   def photo do
-    optional(params([:value, :type, :altid, :pid, :pref, :mediatype, :any]))
+    optional(params([:value, :type, :altid, :pid, :pref, :encoding, :mediatype, :any]))
     |> ignore(colon())
-    |> concat(uri() |> tag(:value))
+    |> concat(choice([uri(), text()]) |> unwrap_and_tag(:value))
     |> label("a uri representing a photo")
   end
 
@@ -463,7 +463,7 @@ defmodule VCard.Parser.Property do
   def gender do
     optional(params([:value, :any]))
     |> ignore(colon())
-    |> optional(sex() |> optional(gender_identity()) |> tag(:value))
+    |> concat(optional(sex()) |> optional(gender_identity()) |> tag(:value))
   end
 
   @doc false
@@ -641,8 +641,8 @@ defmodule VCard.Parser.Property do
   def tel do
     optional(params([:value, :type, :altid, :pid, :pref, :any]))
     |> ignore(colon())
-    |> concat(uri() |> unwrap_and_tag(:value))
-    |> label("a telephone number as a uri")
+    |> concat(choice([uri(), text()]) |> unwrap_and_tag(:value))
+    |> label("a telephone number as a uri or a text value")
   end
 
   # 6.4.2.  EMAIL
@@ -1522,17 +1522,17 @@ defmodule VCard.Parser.Property do
   def caluri do
     optional(params([:value, :type, :mediatype, :altid, :pid, :pref, :any]))
     |> ignore(colon())
-    |> concat(uri()
-    |> unwrap_and_tag(:value))
+    |> concat(uri() |> unwrap_and_tag(:value))
     |> label("a caluri")
   end
 
   @doc false
   def x_property do
-    ascii_string([?x, ?X], min: 1)
-    |> ascii_string([?-], min: 1)
+    ascii_string([?x, ?X], 1)
+    |> ascii_string([?-], 1)
     |> concat(alphanum_and_dash())
     |> reduce({Enum, :join, []})
+    |> optional(params([:value, :type, :mediatype, :altid, :pid, :pref, :any]))
     |> ignore(colon())
     |> concat(text() |> unwrap_and_tag(:value))
     |> label("an x- prefix property")

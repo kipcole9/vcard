@@ -3,8 +3,11 @@ defmodule VCard.Parser do
   import VCard.Parser.{Grammar, Core, Params, Types}
 
   def parse(vcard_text, rule \\ :parse_vcard) when is_binary(vcard_text) do
-    apply(__MODULE__, rule, [unfold(vcard_text)])
-    |> unwrap
+    case unwrap(apply(__MODULE__, rule, [unfold(vcard_text)])) do
+      {:ok, result} -> result
+      {:ok, result, rest} -> result ++ parse(rest, rule)
+      {:error, reason} -> {:error, reason}
+    end
   end
 
   @folder Regex.compile!("\r?\n[ \t]")
@@ -13,7 +16,7 @@ defmodule VCard.Parser do
   end
 
   def group(vcard) when is_list(vcard) do
-    Enum.group_by(vcard, &Keyword.get(&1, :property))
+    Enum.group_by(vcard, &Keyword.get(&1, :group))
   end
 
   def cardinality(grouped_card) when is_map(grouped_card) do
@@ -36,14 +39,11 @@ defmodule VCard.Parser do
   import NimbleParsec
   import VCard.Parser.{Grammar, Core, Params, Types}
 
-  defparsec :parse_vcards,
-    parsec(:parse_vcard)
-    |> repeat
-
   defparsec :parse_vcard,
     begin_line()
     |> repeat(content_line())
     |> concat(end_line())
+    |> wrap
 
   defparsec :property,
     content_line()

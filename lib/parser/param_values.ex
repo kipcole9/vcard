@@ -272,8 +272,8 @@ defmodule VCard.Parser.ParamValues do
   def param_value(:calscale) do
     choice([
       anycase_string("gregorian"),
-      x_name(
-    )])
+      x_name()
+    ])
   end
 
   # 5.9.  SORT-AS
@@ -368,6 +368,11 @@ defmodule VCard.Parser.ParamValues do
 
   def param_value(:uri) do
     uri()
+  end
+
+  def param_value(:encoding) do
+    safe_string()
+    |> reduce({Enum, :map, [&String.downcase/1]})
   end
 
   #    Default parameter type

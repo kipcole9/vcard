@@ -72,8 +72,12 @@ defmodule VCard.Parser.Types do
   #                    / "--"     month  day
   #                    / "--"      "-"   day
   #      date-complete = year     month  day
+  #
+  # Also allow Version 3 dates where of the form yyyy-mm-dd
+  #
   def date do
     choice([
+      year() |> ignore(ascii_char([?-])) |> concat(month()) |> ignore(ascii_char([?-])) |> concat(day()),
       year() |> optional(month() |> concat(day())),
       year() |> ignore(ascii_char([?-])) |> concat(month()),
       ignore(string("---")) |> concat(day()),
@@ -146,10 +150,15 @@ defmodule VCard.Parser.Types do
     choice([
       anycase_string("work"),
       anycase_string("home"),
+      anycase_string("pref"),
+      anycase_string("jpeg"),
+      adr_type(),
       tel_type(),
       related_type(),
       x_name()
     ])
+    |> reduce({Enum, :map, [&String.downcase/1]})
+    |> label("a valid type")
   end
 
   def mediatype do
@@ -157,6 +166,7 @@ defmodule VCard.Parser.Types do
     |> ascii_string([?/], min: 1)
     |> concat(alphanum_and_dash())
     |> reduce({Enum, :join, []})
+    |> label("a valud mediatype")
   end
 
   def attribute_list do
@@ -170,6 +180,15 @@ defmodule VCard.Parser.Types do
 
   def tuplize([key, value]) do
     {key, value}
+  end
+
+  def adr_type do
+    choice([
+      anycase_string("postal"),
+      anycase_string("parcel"),
+      anycase_string("internet")
+    ])
+    |> label("a valid address type")
   end
 
   def related_type do
@@ -195,6 +214,7 @@ defmodule VCard.Parser.Types do
       anycase_string("agent"),
       anycase_string("emergency")
     ])
+    |> label("a valid related type")
   end
 
   def tel_type do
@@ -206,8 +226,10 @@ defmodule VCard.Parser.Types do
       anycase_string("video"),
       anycase_string("pager"),
       anycase_string("textphone"),
+      anycase_string("msg"),
       x_name(),
     ])
+    |> label("a valid tel type")
   end
 
   @unreserved [?0..?9, ?a..?z, ?A..?Z, ?-, ?., ?_, ?~]

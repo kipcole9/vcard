@@ -112,13 +112,24 @@ defmodule VCard.Parser.Params do
            other -> {x, other}
          end
        end)
-    |> Enum.map(fn
-         {x, y} when is_list(y)->
-           {x, Enum.map(y, &String.downcase/1)}
-         {x, y} ->
-           {x, String.downcase(y)}
-       end)
+    |> Enum.map(&downcase/1)
     |> Map.new
+  end
+
+  def downcase(list) when is_list(list) do
+    Enum.map(list, &downcase/1)
+  end
+
+  def downcase({x, y}) do
+    {x, downcase(y)}
+  end
+
+  def downcase(x) when is_binary(x) do
+    String.downcase(x)
+  end
+
+  def downcase(x) do
+    x
   end
 
   def split_at_commas(list) do

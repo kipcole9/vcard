@@ -41,12 +41,12 @@ defmodule VCard.Parser.Grammar do
     |> reduce(:combine_group_and_property)
   end
 
-  def combine_group_and_property([{:group, _} = group, property]) do
-    [group | property]
+  def combine_group_and_property([{:group, group}, {property, args}]) do
+    {property, Keyword.put(args, :group, group)}
   end
 
-  def combine_group_and_property([property]) do
-    [{:group, "_default"} | property]
+  def combine_group_and_property([{property, args}]) do
+    {property, Keyword.put(args, :group, "_default")}
   end
 
   #    group = 1*(ALPHA / DIGIT / "-")
@@ -76,8 +76,11 @@ defmodule VCard.Parser.Grammar do
   end
 
   def tag_and_unescape_property([name | args]) do
-    [{:property, String.downcase(name)} | args]
-    |> Keyword.put(:value, unescape(Keyword.get(args, :value)))
+    {_, args} = Keyword.get_and_update(args, :value, fn current_value ->
+      {current_value, unescape(current_value)}
+    end)
+
+    {String.downcase(name), args}
   end
 
   def known_property do

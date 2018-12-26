@@ -146,7 +146,7 @@ defmodule VCard.Parser.Types do
     digit() |> optional(period() |> concat(digit()))
   end
 
-  def type do
+  def type_code do
     choice([
       anycase_string("work"),
       anycase_string("home"),
@@ -155,7 +155,10 @@ defmodule VCard.Parser.Types do
       adr_type(),
       tel_type(),
       related_type(),
-      x_name()
+      x_name(),
+
+      # Non-standard, lenient parse
+      alphabetic()
     ])
     |> reduce({Enum, :map, [&String.downcase/1]})
     |> label("a valid type")
@@ -166,7 +169,7 @@ defmodule VCard.Parser.Types do
     |> ascii_string([?/], min: 1)
     |> concat(alphanum_and_dash())
     |> reduce({Enum, :join, []})
-    |> label("a valud mediatype")
+    |> label("a valid mediatype")
   end
 
   def attribute_list do
@@ -227,6 +230,9 @@ defmodule VCard.Parser.Types do
       anycase_string("pager"),
       anycase_string("textphone"),
       anycase_string("msg"),
+      anycase_string("iphone"),
+      anycase_string("main"),
+      anycase_string("other"),
       x_name(),
     ])
     |> label("a valid tel type")
@@ -237,14 +243,16 @@ defmodule VCard.Parser.Types do
   @subdelims [?!, ?$, ?&, ?', ?(, ?), ?*, ?+, ?;, ?,, ?=]
 
   def scheme do
-    ascii_string([?a..?z, ?A..?Z, ?0..?9], min: 1)
+    ascii_string([?a..?z, ?A..?Z, ?0..?9, ?-], min: 1)
+    |> label("a URI scheme")
   end
 
   def uri do
     scheme()
-    |> ignore(colon())
+    |> ignore(choice([colon(), ascii_char([?\\]) |> concat(colon())]))
     |> ascii_string(@unreserved ++ @reserved ++ @subdelims, min: 1)
     |> reduce({Enum, :join, [":"]})
+    |> label("a URI")
   end
 
   #

@@ -222,8 +222,8 @@ defmodule VCard.Parser.ParamValues do
   #              ; This is further defined in individual property sections.
   def param_value(:type) do
     optional(ignore(dquote()))
-    |> concat(type())
-    |> repeat(ignore(comma()) |> concat(type()))
+    |> concat(type_code())
+    |> repeat(ignore(comma()) |> concat(type_code()))
     |> optional(ignore(dquote()))
   end
 
@@ -272,7 +272,10 @@ defmodule VCard.Parser.ParamValues do
   def param_value(:calscale) do
     choice([
       anycase_string("gregorian"),
-      x_name()
+      x_name(),
+
+      # lenient parse
+      alphabetic()
     ])
   end
 

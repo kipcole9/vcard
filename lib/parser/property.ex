@@ -1532,7 +1532,7 @@ defmodule VCard.Parser.Property do
     |> ascii_string([?-], 1)
     |> concat(alphanum_and_dash())
     |> reduce({Enum, :join, []})
-    |> optional(params([:value, :type, :mediatype, :altid, :pid, :pref, :any]))
+    |> optional(params([:value, :type, :mediatype, :altid, :pid, :pref, :calscale, :any]))
     |> ignore(colon())
     |> concat(text() |> unwrap_and_tag(:value))
     |> label("an x- prefix property")

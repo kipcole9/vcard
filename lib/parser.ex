@@ -48,6 +48,12 @@ defmodule VCard.Parser do
   defparsec :property,
     content_line()
 
+  defparsec :text,
+    text()
+
+  defparsec :type,
+    type_code()
+
   # parsec:VCard.Parser
 
 end

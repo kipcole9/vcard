@@ -380,12 +380,13 @@ defmodule VCard.Parser.ParamValues do
 
   #    Default parameter type
   #    param-value = *SAFE-CHAR / DQUOTE *QSAFE-CHAR DQUOTE
-  def param_value(_) do
+  def param_value(v) do
     choice([
       quoted_string(),
       non_ascii(),
       safe_string()
     ])
     |> repeat
+    |> post_traverse(:unescape)
   end
 end

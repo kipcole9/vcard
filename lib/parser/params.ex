@@ -7,13 +7,14 @@ defmodule VCard.Parser.Params do
   NimbleCSV.define VCard.Parser.Params.Splitter, separator: ",", escape: "\""
   alias VCard.Parser.Params.Splitter
 
-  @all_param_types [:language, :value, :pref, :pid, :type, :geo, :tz, :sort_as, :calscale, :encoding, :any]
+  @all_param_types [:language, :value, :pref, :pid, :type, :geo, :tz,
+    :sort_as, :calscale, :encoding, :any]
 
   # Generates a `choice/2` parser for the desired
   # parameters
   def params(valid_params \\ @all_param_types) do
     repeat(ignore(semicolon()) |> concat(param(valid_params)))
-    |> reduce(:group_params)
+    |> reduce(:group_and_downcase_params)
     |> unwrap_and_tag(:params)
   end
 
@@ -102,15 +103,22 @@ defmodule VCard.Parser.Params do
     x_name()
   end
 
-  def group_params(list) do
+  def group_and_downcase_params(list) do
     list
     |> Enum.group_by(fn {k, _v} -> k end, fn {_k, v} -> v end)
     |> Map.new(fn {x, y} ->
-      case List.flatten(y) do
-        [one] -> {x, one}
-        other -> {x, other}
-      end
-    end)
+         case List.flatten(y) do
+           [one] -> {x, one}
+           other -> {x, other}
+         end
+       end)
+    |> Enum.map(fn
+         {x, y} when is_list(y)->
+           {x, Enum.map(y, &String.downcase/1)}
+         {x, y} ->
+           {x, String.downcase(y)}
+       end)
+    |> Map.new
   end
 
   def split_at_commas(list) do

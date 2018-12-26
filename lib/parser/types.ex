@@ -251,8 +251,12 @@ defmodule VCard.Parser.Types do
     scheme()
     |> ignore(choice([colon(), ascii_char([?\\]) |> concat(colon())]))
     |> ascii_string(@unreserved ++ @reserved ++ @subdelims, min: 1)
-    |> reduce({Enum, :join, [":"]})
+    |> reduce(:tag_uri)
     |> label("a URI")
+  end
+
+  def tag_uri([scheme, location]) do
+    {scheme, location}
   end
 
   #

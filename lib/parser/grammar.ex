@@ -72,11 +72,12 @@ defmodule VCard.Parser.Grammar do
       x_property()
     ])
     |> label("a vcard property name")
-    |> reduce(:tag_property)
+    |> reduce(:tag_and_unescape_property)
   end
 
-  def tag_property([name | args]) do
+  def tag_and_unescape_property([name | args]) do
     [{:property, String.downcase(name)} | args]
+    |> Keyword.put(:value, unescape(Keyword.get(args, :value)))
   end
 
   def known_property do

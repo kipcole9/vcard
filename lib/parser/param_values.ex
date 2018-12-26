@@ -374,19 +374,17 @@ defmodule VCard.Parser.ParamValues do
   end
 
   def param_value(:encoding) do
-    safe_string()
-    |> reduce({Enum, :map, [&String.downcase/1]})
+    alphanumeric()
   end
 
   #    Default parameter type
   #    param-value = *SAFE-CHAR / DQUOTE *QSAFE-CHAR DQUOTE
-  def param_value(v) do
+  def param_value(_) do
     choice([
       quoted_string(),
       non_ascii(),
       safe_string()
     ])
     |> repeat
-    |> post_traverse(:unescape)
   end
 end

@@ -221,12 +221,22 @@ defmodule VCard.Parser.Core do
     Enum.map(values, &unescape/1)
   end
 
+  def unescape(values) when is_tuple(values) do
+    values
+  end
+
   def unescape(""), do: ""
-  def unescape(<< "\\n", rest :: binary>>), do: "\n" <> unescape(rest)
-  def unescape(<< "\\r", rest :: binary>>), do: "\r" <> unescape(rest)
-  def unescape(<< "\\,", rest :: binary>>), do: "," <> unescape(rest)
-  def unescape(<< "\\;", rest :: binary>>), do: ";" <> unescape(rest)
-  def unescape(<< "\\\\", rest :: binary>>), do: "\\" <> unescape(rest)
+  def unescape(<< "\\n", rest :: binary >>),  do: "\n" <> unescape(rest)
+  def unescape(<< "\\r", rest :: binary >>),  do: "\r" <> unescape(rest)
+  def unescape(<< "\\,", rest :: binary >>),  do: "," <> unescape(rest)
+  def unescape(<< "\\;", rest :: binary >>),  do: ";" <> unescape(rest)
+  def unescape(<< "\\\\", rest :: binary >>), do: "\\" <> unescape(rest)
+
+  # Apple address book annotations
+  def unescape(<< "_$!<", rest :: binary >>), do: unescape(rest)
+  def unescape(<< ">!$_" >>), do: ""
+
+  def unescape(<< "\\", c :: binary-size(1), rest :: binary >>), do: c <> unescape(rest)
   def unescape(<< c :: binary-size(1), rest :: binary>>), do: c <> unescape(rest)
   def unescape(values) do
     values

@@ -80,47 +80,51 @@ defmodule VCard.Parser.Grammar do
       {current_value, unescape(current_value)}
     end)
 
-    {String.downcase(name), args}
+    if is_atom(name) do
+      {name, args}
+    else
+      {String.downcase(name), args}
+    end
   end
 
   def known_property do
     choice([
-      anycase_string("version")       |> concat(version()),
-      anycase_string("source")        |> concat(source()),
-      anycase_string("kind")          |> concat(kind()),
-      anycase_string("fn")            |> concat(fn_()),
-      anycase_string("nickname")      |> concat(nickname()),
-      anycase_string("photo")         |> concat(photo()),
-      anycase_string("bday")          |> concat(bday()),
-      anycase_string("anniversary")   |> concat(anniversary()),
-      anycase_string("gender")        |> concat(gender()),
-      anycase_string("adr")           |> concat(adr()),
-      anycase_string("tel")           |> concat(tel()),
-      anycase_string("email")         |> concat(email()),
-      anycase_string("impp")          |> concat(impp()),
-      anycase_string("lang")          |> concat(lang()),
-      anycase_string("tz")            |> concat(tz()),
-      anycase_string("geo")           |> concat(geo()),
-      anycase_string("title")         |> concat(title()),
-      anycase_string("role")          |> concat(role()),
-      anycase_string("logo")          |> concat(logo()),
-      anycase_string("org")           |> concat(org()),
-      anycase_string("member")        |> concat(member()),
-      anycase_string("related")       |> concat(related()),
-      anycase_string("categories")    |> concat(categories()),
-      anycase_string("note")          |> concat(note()),
-      anycase_string("prodid")        |> concat(prodid()),
-      anycase_string("rev")           |> concat(rev()),
-      anycase_string("sound")         |> concat(sound()),
-      anycase_string("uid")           |> concat(uid()),
-      anycase_string("clientpidmap")  |> concat(clientpidmap()),
-      anycase_string("url")           |> concat(url()),
-      anycase_string("key")           |> concat(key()),
-      anycase_string("fburl")         |> concat(fburl()),
-      anycase_string("caladruri")     |> concat(caladruri()),
-      anycase_string("caluri")        |> concat(caluri()),
-      anycase_string("xml")           |> concat(xml()),
-      anycase_string("n")             |> concat(n()),
+      anycase_string("version")       |> replace(:version) |> concat(version()),
+      anycase_string("source")        |> replace(:source) |> concat(source()),
+      anycase_string("kind")          |> replace(:kind) |> concat(kind()),
+      anycase_string("fn")            |> replace(:fn) |> concat(fn_()),
+      anycase_string("nickname")      |> replace(:nickname) |> concat(nickname()),
+      anycase_string("photo")         |> replace(:photo) |> concat(photo()),
+      anycase_string("bday")          |> replace(:bday) |> concat(bday()),
+      anycase_string("anniversary")   |> replace(:anniversary) |> concat(anniversary()),
+      anycase_string("gender")        |> replace(:gender) |> concat(gender()),
+      anycase_string("adr")           |> replace(:adr) |> concat(adr()),
+      anycase_string("tel")           |> replace(:tel) |> concat(tel()),
+      anycase_string("email")         |> replace(:email) |> concat(email()),
+      anycase_string("impp")          |> replace(:impp) |> concat(impp()),
+      anycase_string("lang")          |> replace(:lang) |> concat(lang()),
+      anycase_string("tz")            |> replace(:tz) |> concat(tz()),
+      anycase_string("geo")           |> replace(:geo) |> concat(geo()),
+      anycase_string("title")         |> replace(:title) |> concat(title()),
+      anycase_string("role")          |> replace(:role) |> concat(role()),
+      anycase_string("logo")          |> replace(:logo) |> concat(logo()),
+      anycase_string("org")           |> replace(:org) |> concat(org()),
+      anycase_string("member")        |> replace(:member) |> concat(member()),
+      anycase_string("related")       |> replace(:related) |> concat(related()),
+      anycase_string("categories")    |> replace(:categories) |> concat(categories()),
+      anycase_string("note")          |> replace(:note) |> concat(note()),
+      anycase_string("prodid")        |> replace(:prodid) |> concat(prodid()),
+      anycase_string("rev")           |> replace(:rev) |> concat(rev()),
+      anycase_string("sound")         |> replace(:sound) |> concat(sound()),
+      anycase_string("uid")           |> replace(:uid) |> concat(uid()),
+      anycase_string("clientpidmap")  |> replace(:clientpidmap) |> concat(clientpidmap()),
+      anycase_string("url")           |> replace(:url) |> concat(url()),
+      anycase_string("key")           |> replace(:key) |> concat(key()),
+      anycase_string("fburl")         |> replace(:fburl) |> concat(fburl()),
+      anycase_string("caladruri")     |> replace(:caladruri) |> concat(caladruri()),
+      anycase_string("caluri")        |> replace(:caluri) |> concat(caluri()),
+      anycase_string("xml")           |> replace(:xml) |> concat(xml()),
+      anycase_string("n")             |> replace(:n) |> concat(n()),
     ])
   end
 
